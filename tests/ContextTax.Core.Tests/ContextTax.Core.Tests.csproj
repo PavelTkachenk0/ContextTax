@@ -2,6 +2,9 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <IsPackable>false</IsPackable>
+    <!-- CA1707: test method names use underscores (e.g. Name_is_ContextTax) by
+         convention; the analyzer would otherwise fail the build under
+         TreatWarningsAsErrors. Scoped to test projects only. -->
     <NoWarn>CA1707</NoWarn>
   </PropertyGroup>
   <ItemGroup>
