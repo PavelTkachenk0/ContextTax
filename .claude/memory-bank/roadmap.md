@@ -22,9 +22,10 @@ product features yet — that begins in sub-project 2.
   complementing CI.
 - **Web tech** — Blazor vs static-HTML generator vs API+SPA — decide in sub-project 6.
 - **Cross-model support** — per-provider token counting beyond Anthropic.
-- **CI vs preview SDK** — `global.json` pins a .NET 10 preview build that GitHub's
-  `setup-dotnet` may not fetch; switch to the GA pin (preferred) or CI
-  `dotnet-quality: preview` before relying on first-push CI being green.
+- **CI vs preview SDK** — CI installs the latest 10.0 SDK via `dotnet-quality:
+  preview` (resilient to the exact-preview pin; `global.json`'s `rollForward:
+  latestFeature` accepts it). Still preferred later: switch `global.json` to the GA
+  pin once .NET 10 GA is installed locally.
 
 ## Next
 Start sub-project 2 (Core measurement engine) with its own spec → plan → implement →

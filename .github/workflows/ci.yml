@@ -14,10 +14,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup .NET (from global.json)
+      - name: Setup .NET (latest 10.0, preview channel)
         uses: actions/setup-dotnet@v4
         with:
-          global-json-file: global.json
+          dotnet-version: '10.0.x'
+          dotnet-quality: 'preview'
 
       - name: Restore
         run: dotnet restore
