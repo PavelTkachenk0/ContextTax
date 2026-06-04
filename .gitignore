@@ -427,3 +427,14 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# --- ContextTax additions ---
+
+# Internal superpowers process journal (specs/plans) — local-only, never published
+docs/superpowers/
+
+# Secrets / local config — never commit
+.env
+.env.*
+appsettings.*.local.json
+.claude/settings.local.json
