@@ -34,6 +34,11 @@ jobs:
 
   hygiene:
     runs-on: ubuntu-latest
+    # gitleaks scans PR commits via the GitHub API on pull_request events,
+    # which requires pull-requests: read (contents: read alone -> 403).
+    permissions:
+      contents: read
+      pull-requests: read
     steps:
       - uses: actions/checkout@v4
         with:
