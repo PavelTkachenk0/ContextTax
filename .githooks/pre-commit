@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# Optional local guardrail (best-effort). Enable: git config core.hooksPath .githooks
+# CI is the authoritative gate.
+set -uo pipefail
+
+status=0
+
+# Personal absolute paths in staged files (excluding this hook itself).
+matches="$(git diff --cached --name-only --diff-filter=ACM \
+  | grep -v '^\.githooks/pre-commit$' \
+  | xargs -r grep -nIE '(/Users/|/home/[A-Za-z]|C:\\Users)' 2>/dev/null || true)"
+if [ -n "$matches" ]; then
+  echo "pre-commit: personal absolute path found in staged changes:" >&2
+  echo "$matches" >&2
+  status=1
+fi
+
+# Style.
+if ! dotnet format --verify-no-changes >/dev/null 2>&1; then
+  echo "pre-commit: 'dotnet format' would change files. Run: dotnet format" >&2
+  status=1
+fi
+
+exit $status

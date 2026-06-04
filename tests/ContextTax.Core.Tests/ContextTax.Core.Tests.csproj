@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <!-- CA1707: test method names use underscores (e.g. Name_is_ContextTax) by
+         convention; the analyzer would otherwise fail the build under
+         TreatWarningsAsErrors. Scoped to test projects only. -->
+    <NoWarn>CA1707</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/ContextTax.Core/ContextTax.Core.csproj" />
+  </ItemGroup>
+</Project>
