@@ -8,6 +8,8 @@
 ## Testing
 - TDD per `superpowers:test-driven-development`: write the failing test first.
 - xUnit. Tests live in `tests/<Project>.Tests`.
+- Test method names use underscores (e.g. `Name_is_ContextTax`); test projects
+  suppress CA1707 with a justifying comment (warnings-as-errors would otherwise fail).
 
 ## Commits & branches
 - Conventional Commits (`feat:`, `fix:`, `docs:`, `chore:`, `ci:`, `test:`, `build:`).
