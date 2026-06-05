@@ -4,6 +4,9 @@
 - `.editorconfig` is authoritative; `dotnet format --verify-no-changes` must pass.
 - `Nullable` enabled; compiler warnings are errors. No suppressions without a comment
   saying why.
+- A vulnerable transitive package breaks the warnings-as-errors build (NU1903). Pin it to
+  a patched version via CPM transitive pinning (`CentralPackageTransitivePinningEnabled` +
+  a `PackageVersion`), with a comment citing the advisory — don't suppress the warning.
 
 ## Testing
 - TDD per `superpowers:test-driven-development`: write the failing test first.
