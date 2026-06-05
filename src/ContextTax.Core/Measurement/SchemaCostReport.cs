@@ -5,6 +5,8 @@ public sealed record ToolCost(string Name, int Tokens);
 public sealed record SchemaCostReport
 {
     public required string ModelId { get; init; }
+    public required MeasurementMode Mode { get; init; }
+    public required string CounterLabel { get; init; }
     public required int ToolCount { get; init; }
     public required int TotalSchemaTokens { get; init; }
     public required IReadOnlyList<ToolCost> PerTool { get; init; }

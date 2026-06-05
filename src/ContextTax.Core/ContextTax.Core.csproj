@@ -6,4 +6,9 @@
   <ItemGroup>
     <InternalsVisibleTo Include="ContextTax.Core.Tests" />
   </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.ML.Tokenizers" />
+    <PackageReference Include="Microsoft.ML.Tokenizers.Data.O200kBase" />
+  </ItemGroup>
 </Project>

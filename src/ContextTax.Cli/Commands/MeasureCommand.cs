@@ -31,6 +31,10 @@ public sealed class MeasureCommand : AsyncCommand<MeasureCommand.Settings>
         [CommandOption("--price <USD_PER_MTOK>")]
         [Description("Input price per million tokens, in USD (used for the $ cost).")]
         public double Price { get; set; } = Defaults.InputPricePerMTokUsd;
+
+        [CommandOption("--estimate")]
+        [Description("Approximate the cost offline with the o200k_base tokenizer (no API key). Counts are labelled ≈ and are not ground-truth.")]
+        public bool Estimate { get; set; }
     }
 
     public override async Task<int> ExecuteAsync(CommandContext context, Settings settings)
@@ -50,14 +54,6 @@ public sealed class MeasureCommand : AsyncCommand<MeasureCommand.Settings>
         if (string.IsNullOrWhiteSpace(settings.ToolsPath))
         {
             await Console.Error.WriteLineAsync("error: --tools <path> is required.").ConfigureAwait(false);
-            return 2;
-        }
-
-        var apiKey = Environment.GetEnvironmentVariable("ANTHROPIC_API_KEY");
-        if (string.IsNullOrWhiteSpace(apiKey))
-        {
-            await Console.Error.WriteLineAsync(
-                "error: ANTHROPIC_API_KEY is not set. Set it (or use 'dotnet user-secrets') to measure.").ConfigureAwait(false);
             return 2;
         }
 
@@ -82,6 +78,27 @@ public sealed class MeasureCommand : AsyncCommand<MeasureCommand.Settings>
             return 2;
         }
 
+        using var http = settings.Estimate ? null : new HttpClient();
+
+        ITokenCounter counter;
+        if (settings.Estimate)
+        {
+            counter = EstimateTokenCounter.CreateO200k();
+        }
+        else
+        {
+            var apiKey = Environment.GetEnvironmentVariable("ANTHROPIC_API_KEY");
+            if (string.IsNullOrWhiteSpace(apiKey))
+            {
+                await Console.Error.WriteLineAsync(
+                    "error: ANTHROPIC_API_KEY is not set. Run with --estimate for a keyless approximate count, "
+                    + "or set the key (or use 'dotnet user-secrets') for exact ground-truth.").ConfigureAwait(false);
+                return 2;
+            }
+
+            counter = new AnthropicTokenCounter(new AnthropicCountTokensClient(http!, apiKey));
+        }
+
         var options = new MeasurementOptions
         {
             Model = settings.Model,
@@ -89,8 +106,7 @@ public sealed class MeasureCommand : AsyncCommand<MeasureCommand.Settings>
             InputPricePerMTokUsd = settings.Price,
         };
 
-        using var http = new HttpClient();
-        var measurer = new SchemaCostMeasurer(new AnthropicTokenCounter(new AnthropicCountTokensClient(http, apiKey)));
+        var measurer = new SchemaCostMeasurer(counter);
 
         SchemaCostReport report;
         try

@@ -42,6 +42,8 @@ public sealed class SchemaCostMeasurer
         return new SchemaCostReport
         {
             ModelId = options.Model,
+            Mode = _counter.Mode,
+            CounterLabel = _counter.Label,
             ToolCount = tools.Count,
             TotalSchemaTokens = total,
             PerTool = perTool,

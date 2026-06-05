@@ -1,5 +1,6 @@
 using System.Text.Json;
 using ContextTax.Cli.Rendering;
+using ContextTax.Core.Counting;
 using ContextTax.Core.Measurement;
 using Xunit;
 
@@ -10,6 +11,8 @@ public class ReportRendererTests
     private static SchemaCostReport Sample => new()
     {
         ModelId = "m1",
+        Mode = MeasurementMode.GroundTruth,
+        CounterLabel = AnthropicTokenCounter.LabelValue,
         ToolCount = 2,
         TotalSchemaTokens = 7,
         PerTool = new[] { new ToolCost("alpha", 5), new ToolCost("bb", 2) },
@@ -29,5 +32,22 @@ public class ReportRendererTests
         Assert.Equal(2, root.GetProperty("ToolCount").GetInt32());
         Assert.Equal("alpha", root.GetProperty("PerTool")[0].GetProperty("Name").GetString());
         Assert.Equal("m1", root.GetProperty("ModelId").GetString());
+    }
+
+    [Fact]
+    public void RenderJson_includes_mode_as_string_and_counter_label()
+    {
+        var report = Sample with
+        {
+            Mode = MeasurementMode.Estimate,
+            CounterLabel = EstimateTokenCounter.LabelValue,
+        };
+
+        var json = ReportRenderer.RenderJson(report);
+        using var doc = JsonDocument.Parse(json);
+        var root = doc.RootElement;
+
+        Assert.Equal("Estimate", root.GetProperty("Mode").GetString());
+        Assert.Equal(EstimateTokenCounter.LabelValue, root.GetProperty("CounterLabel").GetString());
     }
 }

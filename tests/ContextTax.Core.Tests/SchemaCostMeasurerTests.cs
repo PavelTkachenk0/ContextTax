@@ -60,4 +60,16 @@ public class SchemaCostMeasurerTests
         Assert.Single(report.PerTool);
         Assert.Equal(("x", 1), (report.PerTool[0].Name, report.PerTool[0].Tokens));
     }
+
+    [Fact]
+    public async Task Forwards_counter_mode_and_label_into_report()
+    {
+        var counter = new FakeTokenCounter(MeasurementMode.Estimate, "o200k_base (offline proxy)");
+        var measurer = new SchemaCostMeasurer(counter);
+
+        var report = await measurer.MeasureAsync(new[] { Tool("x") }, Options);
+
+        Assert.Equal(MeasurementMode.Estimate, report.Mode);
+        Assert.Equal("o200k_base (offline proxy)", report.CounterLabel);
+    }
 }

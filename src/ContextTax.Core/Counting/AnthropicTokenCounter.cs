@@ -1,5 +1,6 @@
 using System.Text.Json;
 using ContextTax.Core.Mcp;
+using ContextTax.Core.Measurement;
 
 namespace ContextTax.Core.Counting;
 
@@ -13,6 +14,13 @@ public sealed class AnthropicTokenCounter : ITokenCounter
     private readonly AnthropicCountTokensClient _client;
 
     public AnthropicTokenCounter(AnthropicCountTokensClient client) => _client = client;
+
+    /// <summary>Human-readable label exposed as a constant so test fixtures can reference it without duplication.</summary>
+    public const string LabelValue = "Anthropic count_tokens";
+
+    public MeasurementMode Mode => MeasurementMode.GroundTruth;
+
+    public string Label => LabelValue;
 
     public async Task<int> CountAsync(string model, IReadOnlyList<McpTool>? tools, CancellationToken cancellationToken = default)
     {

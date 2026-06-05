@@ -27,4 +27,14 @@ public class AnthropicTokenCounterTests
         Assert.True(baseline > 0);
         Assert.True(withTool > baseline);
     }
+
+    [Fact]
+    public void Anthropic_counter_reports_ground_truth_mode()
+    {
+        using var http = new HttpClient();
+        var counter = new AnthropicTokenCounter(new AnthropicCountTokensClient(http, "unused-key"));
+
+        Assert.Equal(MeasurementMode.GroundTruth, counter.Mode);
+        Assert.Equal(AnthropicTokenCounter.LabelValue, counter.Label);
+    }
 }
