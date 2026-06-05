@@ -11,12 +11,16 @@
 - Test method names use underscores (e.g. `Name_is_ContextTax`); test projects
   suppress CA1707 with a justifying comment (warnings-as-errors would otherwise fail).
 
-## Mapping
+## Mapping & serialization
 - Map between models in a dedicated static class named `{Target}Mapper` with a single
   `Map(...)` method — e.g. `CountTokensRequestMapper.Map(model, tools)`. One mapper per
   target type.
 - DTOs / wire records stay **pure data**: no `For`/`From` factories and no domain-model
   references on them. The mapper owns the domain↔wire translation.
+- Serialize wire models as **typed records + a shared `JsonSerializerOptions`** (e.g.
+  `CountTokensJson.Options`, snake_case + ignore-null) — not a hand-built
+  `JsonNode` / `JsonObject` DOM. Let the naming policy do renames like `inputSchema` →
+  `input_schema`.
 - Keep separation of responsibilities clean across all classes (transport / serialization
   / mapping / domain semantics live in distinct units).
 
