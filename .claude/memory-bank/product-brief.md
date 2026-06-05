@@ -58,9 +58,11 @@ Same tokens, two lenses — most tools show only dollars:
 ## Auth note (for the measurement layer)
 Subscription auth (OAuth, `sk-ant-oat…`) and API key (`sk-ant-api…`) are different
 entities. The `usage` object is available either way (the truth about real
-consumption). The static `count_tokens` endpoint needs an API key but is **free**
-(not billed) — so even a subscription user keeps a cheap API key for the measurement
-layer.
+consumption). The static `count_tokens` endpoint needs an API key **on a funded account** (balance
+> $0): it is **not billed** (doesn't consume credits), but access still requires a
+positive balance — "free" means it doesn't *cost* per call, not that any key works. A
+subscription's $0 API balance is gated → see ADR 0005 for the keyless `--estimate`
+fallback.
 
 ## Competitive landscape & positioning
 - **Static schema counters** (e.g. MCP Token Counter, AgiFlow token-usage-metrics) —
