@@ -11,6 +11,15 @@
 - Test method names use underscores (e.g. `Name_is_ContextTax`); test projects
   suppress CA1707 with a justifying comment (warnings-as-errors would otherwise fail).
 
+## Mapping
+- Map between models in a dedicated static class named `{Target}Mapper` with a single
+  `Map(...)` method — e.g. `CountTokensRequestMapper.Map(model, tools)`. One mapper per
+  target type.
+- DTOs / wire records stay **pure data**: no `For`/`From` factories and no domain-model
+  references on them. The mapper owns the domain↔wire translation.
+- Keep separation of responsibilities clean across all classes (transport / serialization
+  / mapping / domain semantics live in distinct units).
+
 ## Commits & branches
 - Conventional Commits (`feat:`, `fix:`, `docs:`, `chore:`, `ci:`, `test:`, `build:`).
 - Each commit message ends with the project's `Co-Authored-By` trailer.

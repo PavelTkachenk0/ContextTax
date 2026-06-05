@@ -6,4 +6,8 @@
   <ItemGroup>
     <ProjectReference Include="../ContextTax.Core/ContextTax.Core.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Spectre.Console" />
+    <PackageReference Include="Spectre.Console.Cli" />
+  </ItemGroup>
 </Project>

@@ -438,3 +438,6 @@ docs/superpowers/
 .env.*
 appsettings.*.local.json
 .claude/settings.local.json
+
+# JetBrains Rider / IntelliJ IDE files
+.idea/

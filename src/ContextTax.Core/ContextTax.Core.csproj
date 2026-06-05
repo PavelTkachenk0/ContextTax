@@ -2,4 +2,8 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
   </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="ContextTax.Core.Tests" />
+  </ItemGroup>
 </Project>

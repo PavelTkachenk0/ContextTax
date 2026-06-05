@@ -1,0 +1,38 @@
+{
+  "tools": [
+    {
+      "name": "read_file",
+      "description": "Read the complete contents of a file from the file system.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": { "type": "string", "description": "Path to the file to read." }
+        },
+        "required": ["path"]
+      }
+    },
+    {
+      "name": "write_file",
+      "description": "Create a new file or overwrite an existing file with the given contents.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": { "type": "string", "description": "Path to write to." },
+          "content": { "type": "string", "description": "The content to write." }
+        },
+        "required": ["path", "content"]
+      }
+    },
+    {
+      "name": "list_directory",
+      "description": "List the files and subdirectories directly under a directory.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": { "type": "string", "description": "Directory to list." }
+        },
+        "required": ["path"]
+      }
+    }
+  ]
+}
