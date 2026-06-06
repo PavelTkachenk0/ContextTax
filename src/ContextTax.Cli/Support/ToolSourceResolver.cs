@@ -4,7 +4,10 @@ namespace ContextTax.Cli.Support;
 
 public sealed class ToolSourceException : Exception
 {
-    public ToolSourceException(string message, Exception? inner = null) : base(message, inner) { }
+    public int ExitCode { get; }
+
+    public ToolSourceException(string message, Exception? inner = null, int exitCode = 2) : base(message, inner)
+        => ExitCode = exitCode;
 }
 
 /// <summary>The tool-source inputs from a command's settings (exactly one of the three).</summary>
@@ -15,7 +18,6 @@ public sealed record ToolSourceOptions
     public string? Url { get; init; }
     public Dictionary<string, string>? Headers { get; init; }
     public string? ConfigPath { get; init; }
-    public TimeSpan Timeout { get; init; } = TimeSpan.FromSeconds(30);
 }
 
 /// <summary>Resolves the chosen tool source (--tools | --server | --url) to <c>McpTool[]</c>.
@@ -86,10 +88,37 @@ public sealed class ToolSourceResolver
         }
         catch (Exception ex) when (ex is not ToolSourceException)
         {
-            throw new ToolSourceException($"failed to read tools from '{config.Name}': {ex.Message}", ex);
+            throw new ToolSourceException($"failed to read tools from '{config.Name}': {ex.Message}", ex, exitCode: 1);
         }
     }
 
-    private static string DisplayName(string url) =>
+    public static string DisplayName(string url) =>
         Uri.TryCreate(url, UriKind.Absolute, out var uri) ? uri.GetLeftPart(UriPartial.Authority) : url;
+
+    /// <summary>Builds <see cref="ToolSourceOptions"/> from a command's raw settings, parsing
+    /// repeated <c>--header "K: V"</c> values.</summary>
+    public static ToolSourceOptions OptionsFrom(
+        string? toolsPath, string? serverName, string? url, string[] headers, string? configPath) => new()
+        {
+            ToolsPath = string.IsNullOrWhiteSpace(toolsPath) ? null : toolsPath,
+            ServerName = serverName,
+            Url = url,
+            Headers = ParseHeaders(headers),
+            ConfigPath = configPath,
+        };
+
+    private static Dictionary<string, string>? ParseHeaders(string[] headers)
+    {
+        if (headers.Length == 0)
+            return null;
+        var map = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var h in headers)
+        {
+            var i = h.IndexOf(':', StringComparison.Ordinal);
+            if (i <= 0)
+                continue;
+            map[h[..i].Trim()] = h[(i + 1)..].Trim();
+        }
+        return map;
+    }
 }

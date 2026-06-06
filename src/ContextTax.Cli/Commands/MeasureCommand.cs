@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using ContextTax.Cli.Rendering;
+using ContextTax.Cli.Support;
 using ContextTax.Core.Counting;
 using ContextTax.Core.Mcp;
 using ContextTax.Core.Measurement;
@@ -14,7 +15,27 @@ public sealed class MeasureCommand : AsyncCommand<MeasureCommand.Settings>
     {
         [CommandOption("--tools <PATH>")]
         [Description("Path to a tools JSON file (MCP tools/list shape, or a bare array).")]
-        public string ToolsPath { get; set; } = string.Empty;
+        public string? ToolsPath { get; set; }
+
+        [CommandOption("--server <NAME>")]
+        [Description("Measure a live MCP server by name from your MCP config (alternative to --tools).")]
+        public string? Server { get; set; }
+
+        [CommandOption("--url <URL>")]
+        [Description("Measure a live MCP server at an HTTP endpoint (alternative to --tools).")]
+        public string? Url { get; set; }
+
+        [CommandOption("--header <HEADER>")]
+        [Description("HTTP header for --url, as \"Key: Value\" (repeatable).")]
+        public string[] Headers { get; set; } = [];
+
+        [CommandOption("--config <PATH>")]
+        [Description("MCP config file to read --server from (default: ./.mcp.json then ~/.claude.json).")]
+        public string? ConfigPath { get; set; }
+
+        [CommandOption("--timeout <SECONDS>")]
+        [Description("Connection timeout for --server/--url, in seconds.")]
+        public int TimeoutSeconds { get; set; } = 30;
 
         [CommandOption("--model <ID>")]
         [Description("Model id used for count_tokens.")]
@@ -51,52 +72,25 @@ public sealed class MeasureCommand : AsyncCommand<MeasureCommand.Settings>
             return 2;
         }
 
-        if (string.IsNullOrWhiteSpace(settings.ToolsPath))
-        {
-            await Console.Error.WriteLineAsync("error: --tools <path> is required.").ConfigureAwait(false);
-            return 2;
-        }
-
         IReadOnlyList<McpTool> tools;
         try
         {
-            tools = ToolsJsonLoader.LoadFile(settings.ToolsPath);
+            var resolver = ToolSourceResolver.Default(TimeSpan.FromSeconds(settings.TimeoutSeconds));
+            tools = await resolver.ResolveAsync(ToolSourceResolver.OptionsFrom(
+                settings.ToolsPath, settings.Server, settings.Url, settings.Headers, settings.ConfigPath))
+                .ConfigureAwait(false);
         }
-        catch (FileNotFoundException)
-        {
-            await Console.Error.WriteLineAsync($"error: file not found: {settings.ToolsPath}").ConfigureAwait(false);
-            return 2;
-        }
-        catch (DirectoryNotFoundException)
-        {
-            await Console.Error.WriteLineAsync($"error: file not found: {settings.ToolsPath}").ConfigureAwait(false);
-            return 2;
-        }
-        catch (ToolsJsonException ex)
+        catch (ToolSourceException ex)
         {
             await Console.Error.WriteLineAsync($"error: {ex.Message}").ConfigureAwait(false);
+            return ex.ExitCode;
+        }
+
+        using var counterFactory = CounterFactory.Create(settings.Estimate, Environment.GetEnvironmentVariable("ANTHROPIC_API_KEY"));
+        if (counterFactory.Counter is null)
+        {
+            await Console.Error.WriteLineAsync($"error: {counterFactory.Error}").ConfigureAwait(false);
             return 2;
-        }
-
-        using var http = settings.Estimate ? null : new HttpClient();
-
-        ITokenCounter counter;
-        if (settings.Estimate)
-        {
-            counter = EstimateTokenCounter.CreateO200k();
-        }
-        else
-        {
-            var apiKey = Environment.GetEnvironmentVariable("ANTHROPIC_API_KEY");
-            if (string.IsNullOrWhiteSpace(apiKey))
-            {
-                await Console.Error.WriteLineAsync(
-                    "error: ANTHROPIC_API_KEY is not set. Run with --estimate for a keyless approximate count, "
-                    + "or set the key (or use 'dotnet user-secrets') for exact ground-truth.").ConfigureAwait(false);
-                return 2;
-            }
-
-            counter = new AnthropicTokenCounter(new AnthropicCountTokensClient(http!, apiKey));
         }
 
         var options = new MeasurementOptions
@@ -106,7 +100,7 @@ public sealed class MeasureCommand : AsyncCommand<MeasureCommand.Settings>
             InputPricePerMTokUsd = settings.Price,
         };
 
-        var measurer = new SchemaCostMeasurer(counter);
+        var measurer = new SchemaCostMeasurer(counterFactory.Counter);
 
         SchemaCostReport report;
         try
@@ -125,15 +119,19 @@ public sealed class MeasureCommand : AsyncCommand<MeasureCommand.Settings>
         }
 
         if (settings.Json)
-        {
             Console.WriteLine(ReportRenderer.RenderJson(report));
-        }
         else
-        {
-            var title = Path.GetFileNameWithoutExtension(settings.ToolsPath).Replace(".tools", "", StringComparison.Ordinal);
-            ReportRenderer.RenderCard(report, AnsiConsole.Console, title);
-        }
+            ReportRenderer.RenderCard(report, AnsiConsole.Console, Title(settings));
 
         return 0;
+    }
+
+    private static string Title(Settings s)
+    {
+        if (!string.IsNullOrWhiteSpace(s.Server))
+            return s.Server;
+        if (!string.IsNullOrWhiteSpace(s.ToolsPath))
+            return Path.GetFileNameWithoutExtension(s.ToolsPath).Replace(".tools", "", StringComparison.Ordinal);
+        return string.IsNullOrWhiteSpace(s.Url) ? "server" : ToolSourceResolver.DisplayName(s.Url);
     }
 }
