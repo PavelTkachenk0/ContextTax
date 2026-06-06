@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using ContextTax.Cli.Rendering;
+using ContextTax.Cli.Support;
 using ContextTax.Core.Counting;
 using ContextTax.Core.Mcp;
 using ContextTax.Core.Measurement;
@@ -20,6 +21,26 @@ public sealed class SessionCommand : AsyncCommand<SessionCommand.Settings>
         [CommandOption("--tools <PATH>")]
         [Description("Path to a tools JSON file (used when the transcript has no embedded tools).")]
         public string? ToolsPath { get; set; }
+
+        [CommandOption("--server <NAME>")]
+        [Description("Take tools from a live MCP server by name from your MCP config (alternative to --tools).")]
+        public string? Server { get; set; }
+
+        [CommandOption("--url <URL>")]
+        [Description("Take tools from a live MCP server at an HTTP endpoint (alternative to --tools).")]
+        public string? Url { get; set; }
+
+        [CommandOption("--header <HEADER>")]
+        [Description("HTTP header for --url, as \"Key: Value\" (repeatable).")]
+        public string[] Headers { get; set; } = [];
+
+        [CommandOption("--config <PATH>")]
+        [Description("MCP config file to read --server from (default: ./.mcp.json then ~/.claude.json).")]
+        public string? ConfigPath { get; set; }
+
+        [CommandOption("--timeout <SECONDS>")]
+        [Description("Connection timeout for --server/--url, in seconds.")]
+        public int TimeoutSeconds { get; set; } = 30;
 
         [CommandOption("--model <ID>")]
         [Description("Model id used for count_tokens.")]
@@ -58,27 +79,23 @@ public sealed class SessionCommand : AsyncCommand<SessionCommand.Settings>
             return 2;
         }
 
+        // Tools are optional for session (the transcript may embed them). Resolve only if a source flag is set.
         IReadOnlyList<McpTool>? externalTools = null;
-        if (!string.IsNullOrWhiteSpace(settings.ToolsPath))
+        if (!string.IsNullOrWhiteSpace(settings.ToolsPath)
+            || !string.IsNullOrWhiteSpace(settings.Server)
+            || !string.IsNullOrWhiteSpace(settings.Url))
         {
             try
             {
-                externalTools = ToolsJsonLoader.LoadFile(settings.ToolsPath);
+                var resolver = ToolSourceResolver.Default(TimeSpan.FromSeconds(settings.TimeoutSeconds));
+                externalTools = await resolver.ResolveAsync(ToolSourceResolver.OptionsFrom(
+                    settings.ToolsPath, settings.Server, settings.Url, settings.Headers, settings.ConfigPath))
+                    .ConfigureAwait(false);
             }
-            catch (FileNotFoundException)
-            {
-                await Console.Error.WriteLineAsync($"error: file not found: {settings.ToolsPath}").ConfigureAwait(false);
-                return 2;
-            }
-            catch (DirectoryNotFoundException)
-            {
-                await Console.Error.WriteLineAsync($"error: file not found: {settings.ToolsPath}").ConfigureAwait(false);
-                return 2;
-            }
-            catch (ToolsJsonException ex)
+            catch (ToolSourceException ex)
             {
                 await Console.Error.WriteLineAsync($"error: {ex.Message}").ConfigureAwait(false);
-                return 2;
+                return ex.ExitCode;
             }
         }
 
@@ -87,12 +104,7 @@ public sealed class SessionCommand : AsyncCommand<SessionCommand.Settings>
         {
             transcript = TranscriptLoader.LoadFile(settings.TranscriptPath, externalTools);
         }
-        catch (FileNotFoundException)
-        {
-            await Console.Error.WriteLineAsync($"error: file not found: {settings.TranscriptPath}").ConfigureAwait(false);
-            return 2;
-        }
-        catch (DirectoryNotFoundException)
+        catch (Exception ex) when (ex is FileNotFoundException or DirectoryNotFoundException)
         {
             await Console.Error.WriteLineAsync($"error: file not found: {settings.TranscriptPath}").ConfigureAwait(false);
             return 2;
@@ -103,25 +115,11 @@ public sealed class SessionCommand : AsyncCommand<SessionCommand.Settings>
             return 2;
         }
 
-        using var http = settings.Estimate ? null : new HttpClient();
-
-        ITokenCounter counter;
-        if (settings.Estimate)
+        using var counterFactory = CounterFactory.Create(settings.Estimate, Environment.GetEnvironmentVariable("ANTHROPIC_API_KEY"));
+        if (counterFactory.Counter is null)
         {
-            counter = EstimateTokenCounter.CreateO200k();
-        }
-        else
-        {
-            var apiKey = Environment.GetEnvironmentVariable("ANTHROPIC_API_KEY");
-            if (string.IsNullOrWhiteSpace(apiKey))
-            {
-                await Console.Error.WriteLineAsync(
-                    "error: ANTHROPIC_API_KEY is not set. Run with --estimate for a keyless approximate count, "
-                    + "or set the key (or use 'dotnet user-secrets') for exact ground-truth.").ConfigureAwait(false);
-                return 2;
-            }
-
-            counter = new AnthropicTokenCounter(new AnthropicCountTokensClient(http!, apiKey));
+            await Console.Error.WriteLineAsync($"error: {counterFactory.Error}").ConfigureAwait(false);
+            return 2;
         }
 
         var options = new MeasurementOptions
@@ -130,7 +128,7 @@ public sealed class SessionCommand : AsyncCommand<SessionCommand.Settings>
             ContextWindowTokens = settings.Window,
         };
 
-        var measurer = new SessionCostMeasurer(counter);
+        var measurer = new SessionCostMeasurer(counterFactory.Counter);
 
         SessionCostReport report;
         try
