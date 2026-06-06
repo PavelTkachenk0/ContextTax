@@ -54,7 +54,7 @@ SP4 dogfooding, a strong candidate to jump ahead of #5. See **Next**.)
   pin once .NET 10 GA is installed locally.
 - **Live MCP ingestion** — spawn / handshake / `tools/list` so ContextTax points at a
   running MCP server directly (no hand-built tools-JSON). **Validated by SP4 dogfooding**
-  (measuring a real `remote-db` server needed a hand-assembled JSON). Top Next candidate.
+  (measuring a real remote MCP server needed a hand-assembled tools-JSON). Top Next candidate.
 - **Model → window/price table** — derive the context window (e.g. 1M for Opus) and price
   from `--model` instead of a separate `--window`, so `% window` matches the real model.
 - **CounterFactory** — extract the duplicated counter-selection (`--estimate` vs keyed +
