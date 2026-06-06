@@ -76,4 +76,26 @@ public class ToolSourceResolverTests
 
         File.Delete(path);
     }
+
+    [Fact]
+    public void OptionsFrom_parses_a_valid_header()
+    {
+        var headers = new[] { "X-Api-Key: abc123" };
+
+        var options = ToolSourceResolver.OptionsFrom(null, null, "https://h/mcp", headers, null);
+
+        Assert.Equal("abc123", options.Headers!["X-Api-Key"]);
+    }
+
+    [Fact]
+    public void Malformed_header_throws_usage_error_without_echoing_the_value()
+    {
+        var headers = new[] { "Authorization Bearer super-secret-token" };
+
+        var ex = Assert.Throws<ToolSourceException>(() =>
+            ToolSourceResolver.OptionsFrom(null, null, "https://h/mcp", headers, null));
+
+        Assert.Equal(2, ex.ExitCode);
+        Assert.DoesNotContain("super-secret-token", ex.Message); // header values must never surface
+    }
 }

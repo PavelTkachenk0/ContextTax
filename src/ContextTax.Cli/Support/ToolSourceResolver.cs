@@ -115,9 +115,14 @@ public sealed class ToolSourceResolver
         foreach (var h in headers)
         {
             var i = h.IndexOf(':', StringComparison.Ordinal);
-            if (i <= 0)
-                continue;
-            map[h[..i].Trim()] = h[(i + 1)..].Trim();
+            var key = i > 0 ? h[..i].Trim() : string.Empty;
+            if (key.Length == 0)
+            {
+                // Never echo the raw value — it may carry a secret token.
+                throw new ToolSourceException(
+                    "malformed --header: each must be \"Key: Value\" (a ':' separator with a non-empty key).");
+            }
+            map[key] = h[(i + 1)..].Trim();
         }
         return map;
     }
