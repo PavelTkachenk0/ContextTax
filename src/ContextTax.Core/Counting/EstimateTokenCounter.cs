@@ -1,5 +1,4 @@
 using System.Text.Json;
-using ContextTax.Core.Mcp;
 using ContextTax.Core.Measurement;
 using Microsoft.ML.Tokenizers;
 
@@ -31,9 +30,9 @@ public sealed class EstimateTokenCounter : ITokenCounter
 
     public string Label => LabelValue;
 
-    public Task<int> CountAsync(string model, IReadOnlyList<McpTool>? tools, CancellationToken cancellationToken = default)
+    public Task<int> CountAsync(string model, CountInput input, CancellationToken cancellationToken = default)
     {
-        var payload = JsonSerializer.Serialize(CountTokensRequestMapper.Map(model, tools), CountTokensJson.Options);
+        var payload = JsonSerializer.Serialize(CountTokensRequestMapper.Map(model, input), CountTokensJson.Options);
         return Task.FromResult(_tokenizer.CountTokens(payload));
     }
 }

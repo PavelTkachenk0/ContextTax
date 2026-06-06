@@ -1,5 +1,4 @@
 using System.Text.Json;
-using ContextTax.Core.Mcp;
 using ContextTax.Core.Measurement;
 
 namespace ContextTax.Core.Counting;
@@ -22,9 +21,9 @@ public sealed class AnthropicTokenCounter : ITokenCounter
 
     public string Label => LabelValue;
 
-    public async Task<int> CountAsync(string model, IReadOnlyList<McpTool>? tools, CancellationToken cancellationToken = default)
+    public async Task<int> CountAsync(string model, CountInput input, CancellationToken cancellationToken = default)
     {
-        var payload = JsonSerializer.Serialize(CountTokensRequestMapper.Map(model, tools), CountTokensJson.Options);
+        var payload = JsonSerializer.Serialize(CountTokensRequestMapper.Map(model, input), CountTokensJson.Options);
         var body = await _client.PostAsync(payload, cancellationToken).ConfigureAwait(false);
         var response = JsonSerializer.Deserialize<CountTokensResponse>(body, CountTokensJson.Options)
             ?? throw new TokenCountException(200, $"unexpected count_tokens response body: {body}");

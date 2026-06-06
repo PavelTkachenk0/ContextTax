@@ -1,0 +1,28 @@
+[
+  { "role": "user", "content": "List the project root, then read the README." },
+  {
+    "role": "assistant",
+    "content": [
+      { "type": "text", "text": "I'll list the directory first." },
+      { "type": "tool_use", "id": "tu_1", "name": "list_directory", "input": { "path": "/project" } }
+    ]
+  },
+  {
+    "role": "user",
+    "content": [
+      { "type": "tool_result", "tool_use_id": "tu_1", "content": "README.md\nLICENSE\nglobal.json\nDirectory.Build.props\nDirectory.Packages.props\nsrc/\n  ContextTax.Core/\n  ContextTax.Cli/\n  ContextTax.Web/\ntests/\n  ContextTax.Core.Tests/\nsamples/\n  tools/\n.github/\n  workflows/\n.editorconfig\n.gitignore\nCLAUDE.md" }
+    ]
+  },
+  {
+    "role": "assistant",
+    "content": [
+      { "type": "tool_use", "id": "tu_2", "name": "read_file", "input": { "path": "/project/README.md" } }
+    ]
+  },
+  {
+    "role": "user",
+    "content": [
+      { "type": "tool_result", "tool_use_id": "tu_2", "content": "# ContextTax\n\nMeasures the context-window tax an MCP server/tool imposes on an agent — schema bloat and response bloat, across the full token lifecycle — with ground-truth accuracy.\n\n## Why\n\nA modern agent loads every tool definition into its context before the user says a word. A single large MCP server can cost tens of thousands of tokens just to declare its tools; a stack of servers can burn 100-200K tokens up front. Then each tool response dumps more tokens into the window. ContextTax measures the whole lifecycle: schema load, call overhead, response tokens, and how they amortize across a multi-turn session.\n\n## Usage\n\n  contexttax measure --tools <tools.json> [--estimate]\n  contexttax session --transcript <session.json> --tools <tools.json> [--estimate]\n\nGround-truth counts use the Anthropic count_tokens endpoint (funded API account). The keyless --estimate mode approximates offline with an o200k_base tokenizer.\n" }
+    ]
+  }
+]

@@ -2,6 +2,7 @@ using System.Text.Json.Nodes;
 using ContextTax.Core.Counting;
 using ContextTax.Core.Mcp;
 using ContextTax.Core.Measurement;
+using ContextTax.Core.Transcript;
 using Xunit;
 
 namespace ContextTax.Core.Tests;
@@ -25,7 +26,7 @@ public class EstimateTokenCounterTests
     {
         var counter = EstimateTokenCounter.CreateO200k();
 
-        var baseline = await counter.CountAsync("any-model", null);
+        var baseline = await counter.CountAsync("any-model", CountInput.Empty);
 
         Assert.True(baseline > 0);
     }
@@ -35,8 +36,8 @@ public class EstimateTokenCounterTests
     {
         var counter = EstimateTokenCounter.CreateO200k();
 
-        var baseline = await counter.CountAsync("any-model", null);
-        var withTool = await counter.CountAsync("any-model", new[] { Tool("read_file") });
+        var baseline = await counter.CountAsync("any-model", CountInput.Empty);
+        var withTool = await counter.CountAsync("any-model", CountInput.ForTools(new[] { Tool("read_file") }));
 
         Assert.True(withTool > baseline);
     }
@@ -47,9 +48,33 @@ public class EstimateTokenCounterTests
         var counter = EstimateTokenCounter.CreateO200k();
         var tools = new[] { Tool("read_file"), Tool("write_file") };
 
-        var first = await counter.CountAsync("any-model", tools);
-        var second = await counter.CountAsync("any-model", tools);
+        var first = await counter.CountAsync("any-model", CountInput.ForTools(tools));
+        var second = await counter.CountAsync("any-model", CountInput.ForTools(tools));
 
+        Assert.Equal(first, second);
+    }
+
+    [Fact]
+    public async Task Counts_a_transcript_and_is_deterministic()
+    {
+        var counter = EstimateTokenCounter.CreateO200k();
+        var messages = new[]
+        {
+            new TranscriptMessage("assistant", new ContentBlock[]
+            {
+                new ToolUseBlock("t1", "read_file", JsonNode.Parse("""{ "path": "/a" }""")!),
+            }),
+            new TranscriptMessage("user", new ContentBlock[]
+            {
+                new ToolResultBlock("t1", JsonNode.Parse("\"file body\"")!),
+            }),
+        };
+        var input = new CountInput { Messages = messages };
+
+        var first = await counter.CountAsync("any-model", input);
+        var second = await counter.CountAsync("any-model", input);
+
+        Assert.True(first > 0);
         Assert.Equal(first, second);
     }
 }

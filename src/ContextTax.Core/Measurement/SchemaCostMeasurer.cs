@@ -16,19 +16,19 @@ public sealed class SchemaCostMeasurer
     public async Task<SchemaCostReport> MeasureAsync(
         IReadOnlyList<McpTool> tools, MeasurementOptions options, CancellationToken cancellationToken = default)
     {
-        var baseline = await _counter.CountAsync(options.Model, null, cancellationToken).ConfigureAwait(false);
+        var baseline = await _counter.CountAsync(options.Model, CountInput.Empty, cancellationToken).ConfigureAwait(false);
 
         var total = 0;
         var perTool = new List<ToolCost>(tools.Count);
 
         if (tools.Count > 0)
         {
-            var withAll = await _counter.CountAsync(options.Model, tools, cancellationToken).ConfigureAwait(false);
+            var withAll = await _counter.CountAsync(options.Model, CountInput.ForTools(tools), cancellationToken).ConfigureAwait(false);
             total = Math.Max(0, withAll - baseline);
 
             foreach (var tool in tools)
             {
-                var withOne = await _counter.CountAsync(options.Model, new[] { tool }, cancellationToken).ConfigureAwait(false);
+                var withOne = await _counter.CountAsync(options.Model, CountInput.ForTools(new[] { tool }), cancellationToken).ConfigureAwait(false);
                 perTool.Add(new ToolCost(tool.Name, Math.Max(0, withOne - baseline)));
             }
 

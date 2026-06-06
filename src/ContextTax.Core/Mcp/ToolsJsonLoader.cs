@@ -29,6 +29,11 @@ public static class ToolsJsonLoader
                 "Expected a JSON array of tools, or an object with a 'tools' array."),
         };
 
+        return LoadArray(array);
+    }
+
+    internal static IReadOnlyList<McpTool> LoadArray(JsonArray array)
+    {
         var tools = new List<McpTool>(array.Count);
         foreach (var node in array)
         {

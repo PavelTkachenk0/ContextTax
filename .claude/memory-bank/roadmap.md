@@ -1,7 +1,7 @@
 # Roadmap
 
 ## Current status
-**Sub-projects 1–3: ✅ complete and merged to `main` (CI green).**
+**Sub-projects 1–4: ✅ complete and merged to `main` (CI green).**
 - **SP1 — Repository Foundation:** a compiling .NET 10 walking skeleton (Core + CLI +
   Web + Core.Tests, CPM, warnings-as-errors), the AI dev infrastructure (lean
   `CLAUDE.md`, memory bank, `/adr` and `/sync-memory`), public-repo hygiene, and CI.
@@ -16,6 +16,12 @@
   (`MeasurementMode` + `CounterLabel`) into the report and `--json`. A deliberate,
   clearly-labelled (`≈`) departure from the ground-truth thesis — for the keyless mode
   only. See ADR 0005.
+- **SP4 — Response-bloat + full-lifecycle (the wedge):** measures what tool *responses*
+  dump into context and how cost accumulates across a multi-turn session, from a recorded
+  Anthropic transcript (`tool_use`/`tool_result`). New `session` CLI command (per-turn
+  call/response/cumulative table + response-bloat headline + `--json`), over the **same**
+  `ITokenCounter` seam (grown to a typed `CountInput`), so both modes work. Token-and-%-
+  window only (no `$`/cache — cache needs live `usage`). See `architecture.md` and ADR 0006.
 
 ## Decomposition
 1. **Repository Foundation** — ✅ done (SP1).
@@ -23,10 +29,14 @@
    via `count_tokens` (ground truth) plus the `measure` report card.
 3. **Offline `--estimate` mode** — ✅ done (SP3). Keyless approximate counting via the
    o200k_base proxy.
-4. **Response-bloat + full-lifecycle** measurement (the wedge). **← Next.**
+4. **Response-bloat + full-lifecycle** measurement (the wedge) — ✅ done (SP4). Per-turn
+   call/response/amortization from a recorded transcript; the `session` command.
 5. **Strategy comparison harness** — static / tool-search / dynamic / progressive /
    code mode; reproducible, with variance.
 6. **Web dashboard / leaderboard.**
+
+(Live MCP ingestion — auto-`tools/list` from a running server — is un-numbered but, after
+SP4 dogfooding, a strong candidate to jump ahead of #5. See **Next**.)
 
 ## Deferred / open
 - **Estimate calibration** — calibrate the o200k_base proxy against ground truth (a
@@ -42,9 +52,23 @@
   preview` (resilient to the exact-preview pin; `global.json`'s `rollForward:
   latestFeature` accepts it). Still preferred later: switch `global.json` to the GA
   pin once .NET 10 GA is installed locally.
+- **Live MCP ingestion** — spawn / handshake / `tools/list` so ContextTax points at a
+  running MCP server directly (no hand-built tools-JSON). **Validated by SP4 dogfooding**
+  (measuring a real `remote-db` server needed a hand-assembled JSON). Top Next candidate.
+- **Model → window/price table** — derive the context window (e.g. 1M for Opus) and price
+  from `--model` instead of a separate `--window`, so `% window` matches the real model.
+- **CounterFactory** — extract the duplicated counter-selection (`--estimate` vs keyed +
+  no-key hint) shared by `measure`/`session` (rule-of-three: when a 3rd consumer arrives).
+- **Packaging** — ship `contexttax` as a .NET global tool (`PackAsTool` + `dotnet pack`)
+  and/or a `dotnet publish` single-file binary, so it runs without `dotnet run`.
+- **Command-level CLI tests** — exit-code coverage for `MeasureCommand`/`SessionCommand`
+  (today covered only via the loaders/measurer).
 
 ## Next
-**Sub-project 4 — response-bloat + full-lifecycle measurement** (the wedge): measure what
-tool *responses* dump into context, and how costs amortize across a multi-turn agentic
-session — not just the static schema snapshot. Run the spec → plan → implement →
-`/sync-memory` cycle.
+**Decision pending — pick the next sub-project (brainstorm → spec → plan → implement →
+`/sync-memory`):**
+- **Live MCP ingestion** (newly validated by dogfooding) — auto-pull `tools/list` from a
+  running server so `measure`/`session` point at real MCP servers directly. Highest product
+  value: it's what a user reaches for first.
+- **SP5 — Strategy comparison harness** (original #5) — static / tool-search / dynamic /
+  progressive / code mode on the same servers/tasks, reproducible with variance.
