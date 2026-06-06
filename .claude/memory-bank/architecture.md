@@ -1,9 +1,10 @@
 # Architecture
 
 ## Solution layout
-- `src/ContextTax.Core` — measurement engine (library). No UI. The only *network* I/O is
-  the Anthropic HTTP call (ground-truth path); the offline estimator runs in-process.
-  Organized into `Mcp/` (tool ingestion), `Transcript/` (recorded-session ingestion),
+- `src/ContextTax.Core` — measurement engine (library). No UI. Network/process I/O is the
+  Anthropic HTTP call (ground-truth path) and live MCP ingestion (`Mcp/LiveToolSource`, the
+  SDK); the offline estimator runs in-process. Organized into `Mcp/` (tool ingestion — file
+  **and** live server), `Transcript/` (recorded-session ingestion),
   `Counting/` (the token-counting seam — the ground-truth and the offline counters), and
   `Measurement/` (cost orchestration + report model — schema **and** session). Strategy-
   comparison logic lands here in a later sub-project.
@@ -16,14 +17,21 @@
   test project references the CLI to test `ReportRenderer`/`SessionReportRenderer`).
 
 ## Dependency direction
-`Cli → Core ← Web`. Core depends on no other *project* in the solution. Its only runtime
-NuGet deps are the o200k_base tokenizer packages (computation, not UI/framework); Spectre
-stays CLI-only.
+`Cli → Core ← Web`. Core depends on no other *project* in the solution. Its runtime NuGet
+deps are the o200k_base tokenizer packages (computation, not UI/framework) and the
+`ModelContextProtocol` client SDK (live ingestion); Spectre stays CLI-only.
 
-## Core internals (built in SP2–SP4)
+## Core internals (built in SP2–SP5)
 - **`Mcp/`** — `ToolsJsonLoader` parses a tools-JSON document (MCP `tools/list` shape or
   a bare array) → `IReadOnlyList<McpTool>`; `ToolsJsonException` for parse errors.
   (`LoadArray(JsonArray)` is reused by the transcript loader for embedded tools.)
+  **SP5 (live ingestion):** `IToolSource` — the live-source seam (`GetToolsAsync(ct) →
+  McpTool[]`, mirroring `ITokenCounter`); `LiveToolSource` — that seam over the official
+  `ModelContextProtocol` SDK (build transport from config → `initialize` → `tools/list` →
+  map → dispose; stdio **and** HTTP; read-only, never `tools/call`; the only net/process
+  code); `McpToolMapper` (`{Target}Mapper.Map`: SDK tool → `McpTool`); `McpServerConfig`
+  (pure record) + `McpConfigResolver` (layered `mcpServers` → `List()`/`Resolve(name)`,
+  `${ENV}` resolution, no network) + `McpConfigException`. See ADR 0007.
 - **`Transcript/`** (SP4) — recorded-session ingestion: `TranscriptLoader` parses an
   Anthropic-messages document (bare array or `{ tools?, messages }`) → `SessionTranscript`
   (`Tools` + `Messages`); domain models `TranscriptMessage` + `ContentBlock`
@@ -57,27 +65,38 @@ stays CLI-only.
   response-bloat headline ratios, same `Mode`/`CounterLabel` provenance — tokens + % window,
   no `$`.
 
-## CLI (built in SP2–SP4)
-- `MeasureCommand` — `measure --tools <path> [--model] [--window] [--price] [--json] [--estimate]`.
-  `--estimate` selects the offline counter (keyless, no network); without it the
-  ground-truth path requires a key, and the no-key error points the user at `--estimate`.
+## CLI (built in SP2–SP5)
+- `MeasureCommand` — `measure (--tools <path> | --server <name> | --url <url> [--header "K: V"]…)
+  [--config] [--timeout] [--model] [--window] [--price] [--json] [--estimate]`. Tool-source and
+  counter selection are delegated to the shared `Support/` helpers (below), so the command stays
+  thin. `--estimate` selects the offline counter (keyless); without it the ground-truth path
+  needs a key, and the no-key error points the user at `--estimate`.
 - `ReportRenderer` — a **mode-aware** Spectre card (a `✓ GROUND TRUTH` / `≈ ESTIMATE` badge,
   `~`-prefixed approximate numbers, an estimate disclaimer footer) **or** JSON (emits `Mode`
   as a string so pipes/CI can tell estimate from truth).
-- `SessionCommand` (SP4) — `session --transcript <path> [--tools] [--model] [--window]
-  [--json] [--estimate]` (no `--price`). Loads a transcript (+tools), runs
-  `SessionCostMeasurer`, renders. Mirrors `MeasureCommand` (counter selection, exit codes).
+- `SessionCommand` (SP4; SP5 sources) — `session --transcript <path> (--tools | --server |
+  --url [--header …]…) [--config] [--timeout] [--model] [--window] [--json] [--estimate]`
+  (no `--price`). Loads a transcript; external tools come from the same `Support/` helpers
+  (embedded transcript tools still win). Runs `SessionCostMeasurer`, renders.
 - `SessionReportRenderer` (SP4) — mode-aware per-turn card + JSON; sibling of `ReportRenderer`.
-- `Program.cs` — builds the Spectre `CommandApp` (registers `measure` + `session`).
+- `ServersCommand` (SP5) — `servers [--config] [--json]` lists discovered servers via
+  `McpConfigResolver.List()` (no connection); `Rendering/ServersRenderer` renders a table or
+  `--json`, emitting header **key names only** (values never surfaced).
+- `Support/` (SP5) — `ToolSourceResolver` resolves `--tools | --server | --url` → `McpTool[]`
+  (a `Func<McpServerConfig, IToolSource>` factory is injected so tests use a fake; a malformed
+  `--header` → exit 2 without echoing the value); `CounterFactory` selects the counter and owns
+  the `HttpClient` lifetime; `McpConfig` builds the layered resolver from `./.mcp.json` +
+  `~/.claude.json`. Both helpers are shared by `measure` + `session`.
+- `Program.cs` — builds the Spectre `CommandApp` (registers `measure` + `session` + `servers`).
 
 ## Build configuration (shared)
 - `global.json` pins the .NET 10 SDK.
 - `Directory.Build.props` — nullable, implicit usings, latest C#, warnings-as-errors,
   analyzers. (`TargetFramework` is set per project.)
-- `Directory.Packages.props` — Central Package Management: Spectre (SP2) and the o200k_base
-  tokenizer packages (`Microsoft.ML.Tokenizers` + `…Data.O200kBase`, SP3).
-  `CentralPackageTransitivePinningEnabled` pins a patched `Microsoft.Bcl.Memory` (a
-  vulnerable transitive of the tokenizer data package).
+- `Directory.Packages.props` — Central Package Management: Spectre (SP2), the o200k_base
+  tokenizer packages (`Microsoft.ML.Tokenizers` + `…Data.O200kBase`, SP3), and
+  `ModelContextProtocol` (the client SDK, SP5). `CentralPackageTransitivePinningEnabled` pins
+  a patched `Microsoft.Bcl.Memory` (a vulnerable transitive of the tokenizer data package).
 - `.editorconfig` — style, enforced by `dotnet format` in CI.
 
 ## Where things live
@@ -87,6 +106,5 @@ stays CLI-only.
 - Conventions → `conventions.md`
 
 ## Not yet built
-Live MCP ingestion (spawn / handshake / `tools/list`), the strategy-comparison harness,
-subscription budget mode, and the web dashboard. Next up is **live MCP ingestion** vs the
-strategy harness (decision pending). See `roadmap.md`.
+The strategy-comparison harness, subscription budget mode, and the web dashboard. Next up:
+the strategy-comparison harness (or another parking-lot item — see `roadmap.md`).

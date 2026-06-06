@@ -13,6 +13,12 @@
 - xUnit. Tests live in `tests/<Project>.Tests`.
 - Test method names use underscores (e.g. `Name_is_ContextTax`); test projects
   suppress CA1707 with a justifying comment (warnings-as-errors would otherwise fail).
+- **Gated integration tests** (those that touch the network or spawn a process) are
+  **opt-in via an environment variable** and skip by early `return` when it is unset, so CI
+  stays hermetic — no network calls, no external packages pulled. `ANTHROPIC_API_KEY` gates
+  the live `count_tokens` test; `CONTEXTTAX_LIVE_TESTS=1` gates the live MCP ingestion test.
+  (xUnit v2 has no conditional `Skip`; early-return reports as *passed* — a true skip would
+  need the `Xunit.SkippableFact` dependency, deliberately avoided.)
 
 ## Mapping & serialization
 - Map between models in a dedicated static class named `{Target}Mapper` with a single

@@ -1,7 +1,7 @@
 # Roadmap
 
 ## Current status
-**Sub-projects 1–4: ✅ complete and merged to `main` (CI green).**
+**Sub-projects 1–5: ✅ complete and merged to `main` (CI green).**
 - **SP1 — Repository Foundation:** a compiling .NET 10 walking skeleton (Core + CLI +
   Web + Core.Tests, CPM, warnings-as-errors), the AI dev infrastructure (lean
   `CLAUDE.md`, memory bank, `/adr` and `/sync-memory`), public-repo hygiene, and CI.
@@ -22,6 +22,13 @@
   call/response/cumulative table + response-bloat headline + `--json`), over the **same**
   `ITokenCounter` seam (grown to a typed `CountInput`), so both modes work. Token-and-%-
   window only (no `$`/cache — cache needs live `usage`). See `architecture.md` and ADR 0006.
+- **SP5 — Live MCP ingestion:** `measure`/`session` pull `tools/list` from a **running** MCP
+  server (`--server <name>` from layered config, or `--url` + `--header` ad-hoc; stdio **and**
+  HTTP) via the official `ModelContextProtocol` SDK behind a new `IToolSource` seam — no more
+  hand-built tools-JSON. Adds a `servers` command (list configured servers, no connection)
+  and shared CLI helpers (`ToolSourceResolver`, `CounterFactory`). Read-only (`initialize` +
+  `tools/list` only); secret-safe (header/env values never surfaced); the live test is gated
+  out of CI via `CONTEXTTAX_LIVE_TESTS`. See `architecture.md` and ADR 0007.
 
 ## Decomposition
 1. **Repository Foundation** — ✅ done (SP1).
@@ -31,12 +38,12 @@
    o200k_base proxy.
 4. **Response-bloat + full-lifecycle** measurement (the wedge) — ✅ done (SP4). Per-turn
    call/response/amortization from a recorded transcript; the `session` command.
-5. **Strategy comparison harness** — static / tool-search / dynamic / progressive /
+5. **Live MCP ingestion** — ✅ done (SP5). Pull `tools/list` from a running server
+   (`--server`/`--url`, stdio + HTTP) via the official SDK behind `IToolSource`; the `servers`
+   command; shared `ToolSourceResolver`/`CounterFactory`.
+6. **Strategy comparison harness** — static / tool-search / dynamic / progressive /
    code mode; reproducible, with variance.
-6. **Web dashboard / leaderboard.**
-
-(Live MCP ingestion — auto-`tools/list` from a running server — is un-numbered but, after
-SP4 dogfooding, a strong candidate to jump ahead of #5. See **Next**.)
+7. **Web dashboard / leaderboard.**
 
 ## Deferred / open
 - **Estimate calibration** — calibrate the o200k_base proxy against ground truth (a
@@ -52,23 +59,18 @@ SP4 dogfooding, a strong candidate to jump ahead of #5. See **Next**.)
   preview` (resilient to the exact-preview pin; `global.json`'s `rollForward:
   latestFeature` accepts it). Still preferred later: switch `global.json` to the GA
   pin once .NET 10 GA is installed locally.
-- **Live MCP ingestion** — spawn / handshake / `tools/list` so ContextTax points at a
-  running MCP server directly (no hand-built tools-JSON). **Validated by SP4 dogfooding**
-  (measuring a real remote MCP server needed a hand-assembled tools-JSON). Top Next candidate.
 - **Model → window/price table** — derive the context window (e.g. 1M for Opus) and price
   from `--model` instead of a separate `--window`, so `% window` matches the real model.
-- **CounterFactory** — extract the duplicated counter-selection (`--estimate` vs keyed +
-  no-key hint) shared by `measure`/`session` (rule-of-three: when a 3rd consumer arrives).
 - **Packaging** — ship `contexttax` as a .NET global tool (`PackAsTool` + `dotnet pack`)
   and/or a `dotnet publish` single-file binary, so it runs without `dotnet run`.
 - **Command-level CLI tests** — exit-code coverage for `MeasureCommand`/`SessionCommand`
   (today covered only via the loaders/measurer).
 
 ## Next
-**Decision pending — pick the next sub-project (brainstorm → spec → plan → implement →
-`/sync-memory`):**
-- **Live MCP ingestion** (newly validated by dogfooding) — auto-pull `tools/list` from a
-  running server so `measure`/`session` point at real MCP servers directly. Highest product
-  value: it's what a user reaches for first.
-- **SP5 — Strategy comparison harness** (original #5) — static / tool-search / dynamic /
-  progressive / code mode on the same servers/tasks, reproducible with variance.
+SP5 (live MCP ingestion) is done. **Pick the next sub-project (brainstorm → spec → plan →
+implement → `/sync-memory`):**
+- **Strategy comparison harness** — static / tool-search / dynamic / progressive / code
+  mode on the same servers/tasks, reproducible with variance.
+- **Web dashboard / leaderboard** — surface the measurements (web tech TBD).
+- **Packaging** — ship `contexttax` as a .NET global tool / single-file publish.
+- **Model → window/price table** — derive window + price from `--model`.
