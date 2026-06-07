@@ -432,6 +432,10 @@ FodyWeavers.xsd
 
 # Internal superpowers process journal (specs/plans) — local-only, never published
 docs/superpowers/
+# Visual-brainstorm companion artifacts (mockups/state) — local-only, never published
+.superpowers/
+# Local dashboard dataset — your own measurements (may include private servers); never committed
+samples/leaderboard/
 
 # Secrets / local config — never commit
 .env
