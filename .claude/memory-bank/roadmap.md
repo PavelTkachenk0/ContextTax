@@ -1,7 +1,7 @@
 # Roadmap
 
 ## Current status
-**Sub-projects 1–5: ✅ complete and merged to `main` (CI green).**
+**Sub-projects 1–6: ✅ complete and merged to `main` (CI green).**
 - **SP1 — Repository Foundation:** a compiling .NET 10 walking skeleton (Core + CLI +
   Web + Core.Tests, CPM, warnings-as-errors), the AI dev infrastructure (lean
   `CLAUDE.md`, memory bank, `/adr` and `/sync-memory`), public-repo hygiene, and CI.
@@ -29,6 +29,12 @@
   and shared CLI helpers (`ToolSourceResolver`, `CounterFactory`). Read-only (`initialize` +
   `tools/list` only); secret-safe (header/env values never surfaced); the live test is gated
   out of CI via `CONTEXTTAX_LIVE_TESTS`. See `architecture.md` and ADR 0007.
+- **SP6 — Interactive CLI UX:** running `contexttax` with no args launches a Spectre **menu-loop**
+  (Measure / Session / List servers / Quit) with guided prompts (source / server-from-config /
+  mode), on the existing Spectre dep (no new dependency); the flag commands are unchanged. A shared
+  **`MeasurementRunner`** (extracted resolve→count→measure core + typed `RunResult`) now backs both
+  the flag commands and the interactive mode (de-dup). Every prompt is cancellable back to the menu;
+  a failed action never crashes the loop. See `architecture.md` and ADR 0008.
 
 ## Decomposition
 1. **Repository Foundation** — ✅ done (SP1).
@@ -41,17 +47,17 @@
 5. **Live MCP ingestion** — ✅ done (SP5). Pull `tools/list` from a running server
    (`--server`/`--url`, stdio + HTTP) via the official SDK behind `IToolSource`; the `servers`
    command; shared `ToolSourceResolver`/`CounterFactory`.
-6. **Strategy comparison harness** — static / tool-search / dynamic / progressive /
-   code mode; reproducible, with variance.
+6. **Interactive CLI UX** — ✅ done (SP6). A Spectre menu-loop (default command) over the shared
+   `MeasurementRunner`; flag commands unchanged.
 7. **Web dashboard / leaderboard.**
+8. **Strategy comparison harness** — static / tool-search / dynamic / progressive /
+   code mode; reproducible, with variance.
 
 ## Deferred / open
 - **Estimate calibration** — calibrate the o200k_base proxy against ground truth (a
   correction factor) once funded-API access is available. Out of scope for SP3 by design.
 - **Claude Code hooks** — revisit (maintainer flagged). Candidate: a commit-guard hook
   complementing CI.
-- **Interactive CLI UX** — a richer Spectre prompt / menu / live-progress mode (Spectre
-  is already a dependency). Slot as its own small sub-project; brainstorm when chosen.
 - **Web tech** — Blazor vs static-HTML generator vs API+SPA — decide in the web
   sub-project.
 - **Cross-model support** — per-provider token counting beyond Anthropic.
@@ -59,18 +65,17 @@
   preview` (resilient to the exact-preview pin; `global.json`'s `rollForward:
   latestFeature` accepts it). Still preferred later: switch `global.json` to the GA
   pin once .NET 10 GA is installed locally.
-- **Model → window/price table** — derive the context window (e.g. 1M for Opus) and price
-  from `--model` instead of a separate `--window`, so `% window` matches the real model.
+- **Model → window/price table — considered & DROPPED (2026-06-07).** No reliable auto-source
+  (Anthropic `/v1/models` has no window/price; pricing is web-only) → only a stale manual table;
+  value is mere convenience (`--window`/`--price` already work). Don't re-propose without an auto-source.
 - **Packaging** — ship `contexttax` as a .NET global tool (`PackAsTool` + `dotnet pack`)
   and/or a `dotnet publish` single-file binary, so it runs without `dotnet run`.
 - **Command-level CLI tests** — exit-code coverage for `MeasureCommand`/`SessionCommand`
   (today covered only via the loaders/measurer).
 
 ## Next
-SP5 (live MCP ingestion) is done. **Pick the next sub-project (brainstorm → spec → plan →
-implement → `/sync-memory`):**
-- **Strategy comparison harness** — static / tool-search / dynamic / progressive / code
-  mode on the same servers/tasks, reproducible with variance.
-- **Web dashboard / leaderboard** — surface the measurements (web tech TBD).
-- **Packaging** — ship `contexttax` as a .NET global tool / single-file publish.
-- **Model → window/price table** — derive window + price from `--model`.
+SP6 (interactive CLI UX) is done. Agreed remaining order (brainstorm → spec → plan → implement →
+`/sync-memory` each):
+- **Web dashboard / leaderboard** — surface the measurements (web tech TBD). **Next up.**
+- **Strategy comparison harness** — static / tool-search / dynamic / progressive / code mode.
+- **Packaging** — ship `contexttax` as a .NET global tool / single-file publish (likely a later session).

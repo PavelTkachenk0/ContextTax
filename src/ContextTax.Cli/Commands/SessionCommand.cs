@@ -1,10 +1,7 @@
 using System.ComponentModel;
 using ContextTax.Cli.Rendering;
 using ContextTax.Cli.Support;
-using ContextTax.Core.Counting;
-using ContextTax.Core.Mcp;
 using ContextTax.Core.Measurement;
-using ContextTax.Core.Transcript;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
@@ -79,40 +76,16 @@ public sealed class SessionCommand : AsyncCommand<SessionCommand.Settings>
             return 2;
         }
 
-        // Tools are optional for session (the transcript may embed them). Resolve only if a source flag is set.
-        IReadOnlyList<McpTool>? externalTools = null;
-        if (!string.IsNullOrWhiteSpace(settings.ToolsPath)
-            || !string.IsNullOrWhiteSpace(settings.Server)
-            || !string.IsNullOrWhiteSpace(settings.Url))
-        {
-            try
-            {
-                var resolver = ToolSourceResolver.Default(TimeSpan.FromSeconds(settings.TimeoutSeconds));
-                externalTools = await resolver.ResolveAsync(ToolSourceResolver.OptionsFrom(
-                    settings.ToolsPath, settings.Server, settings.Url, settings.Headers, settings.ConfigPath))
-                    .ConfigureAwait(false);
-            }
-            catch (ToolSourceException ex)
-            {
-                await Console.Error.WriteLineAsync($"error: {ex.Message}").ConfigureAwait(false);
-                return ex.ExitCode;
-            }
-        }
-
-        SessionTranscript transcript;
+        ToolSourceOptions source;
         try
         {
-            transcript = TranscriptLoader.LoadFile(settings.TranscriptPath, externalTools);
+            source = ToolSourceResolver.OptionsFrom(
+                settings.ToolsPath, settings.Server, settings.Url, settings.Headers, settings.ConfigPath);
         }
-        catch (Exception ex) when (ex is FileNotFoundException or DirectoryNotFoundException)
-        {
-            await Console.Error.WriteLineAsync($"error: file not found: {settings.TranscriptPath}").ConfigureAwait(false);
-            return 2;
-        }
-        catch (TranscriptException ex)
+        catch (ToolSourceException ex)
         {
             await Console.Error.WriteLineAsync($"error: {ex.Message}").ConfigureAwait(false);
-            return 2;
+            return ex.ExitCode;
         }
 
         using var counterFactory = CounterFactory.Create(settings.Estimate, Environment.GetEnvironmentVariable("ANTHROPIC_API_KEY"));
@@ -128,32 +101,22 @@ public sealed class SessionCommand : AsyncCommand<SessionCommand.Settings>
             ContextWindowTokens = settings.Window,
         };
 
-        var measurer = new SessionCostMeasurer(counterFactory.Counter);
-
-        SessionCostReport report;
-        try
+        var runner = MeasurementRunner.Default(TimeSpan.FromSeconds(settings.TimeoutSeconds));
+        var result = await runner.RunSessionAsync(settings.TranscriptPath, source, options, counterFactory.Counter).ConfigureAwait(false);
+        if (!result.IsSuccess)
         {
-            report = await measurer.MeasureAsync(transcript, options).ConfigureAwait(false);
-        }
-        catch (TokenCountException ex)
-        {
-            await Console.Error.WriteLineAsync($"error: {ex.Message}").ConfigureAwait(false);
-            return 1;
-        }
-        catch (HttpRequestException ex)
-        {
-            await Console.Error.WriteLineAsync($"error: network failure calling Anthropic: {ex.Message}").ConfigureAwait(false);
-            return 1;
+            await Console.Error.WriteLineAsync($"error: {result.ErrorMessage}").ConfigureAwait(false);
+            return result.ExitCode;
         }
 
         if (settings.Json)
         {
-            Console.WriteLine(SessionReportRenderer.RenderJson(report));
+            Console.WriteLine(SessionReportRenderer.RenderJson(result.Report!));
         }
         else
         {
             var title = Path.GetFileNameWithoutExtension(settings.TranscriptPath).Replace(".session", "", StringComparison.Ordinal);
-            SessionReportRenderer.RenderCard(report, AnsiConsole.Console, title);
+            SessionReportRenderer.RenderCard(result.Report!, AnsiConsole.Console, title);
         }
 
         return 0;

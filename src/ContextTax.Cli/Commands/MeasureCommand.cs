@@ -1,8 +1,6 @@
 using System.ComponentModel;
 using ContextTax.Cli.Rendering;
 using ContextTax.Cli.Support;
-using ContextTax.Core.Counting;
-using ContextTax.Core.Mcp;
 using ContextTax.Core.Measurement;
 using Spectre.Console;
 using Spectre.Console.Cli;
@@ -72,13 +70,11 @@ public sealed class MeasureCommand : AsyncCommand<MeasureCommand.Settings>
             return 2;
         }
 
-        IReadOnlyList<McpTool> tools;
+        ToolSourceOptions source;
         try
         {
-            var resolver = ToolSourceResolver.Default(TimeSpan.FromSeconds(settings.TimeoutSeconds));
-            tools = await resolver.ResolveAsync(ToolSourceResolver.OptionsFrom(
-                settings.ToolsPath, settings.Server, settings.Url, settings.Headers, settings.ConfigPath))
-                .ConfigureAwait(false);
+            source = ToolSourceResolver.OptionsFrom(
+                settings.ToolsPath, settings.Server, settings.Url, settings.Headers, settings.ConfigPath);
         }
         catch (ToolSourceException ex)
         {
@@ -100,28 +96,18 @@ public sealed class MeasureCommand : AsyncCommand<MeasureCommand.Settings>
             InputPricePerMTokUsd = settings.Price,
         };
 
-        var measurer = new SchemaCostMeasurer(counterFactory.Counter);
-
-        SchemaCostReport report;
-        try
+        var runner = MeasurementRunner.Default(TimeSpan.FromSeconds(settings.TimeoutSeconds));
+        var result = await runner.RunSchemaAsync(source, options, counterFactory.Counter).ConfigureAwait(false);
+        if (!result.IsSuccess)
         {
-            report = await measurer.MeasureAsync(tools, options).ConfigureAwait(false);
-        }
-        catch (TokenCountException ex)
-        {
-            await Console.Error.WriteLineAsync($"error: {ex.Message}").ConfigureAwait(false);
-            return 1;
-        }
-        catch (HttpRequestException ex)
-        {
-            await Console.Error.WriteLineAsync($"error: network failure calling Anthropic: {ex.Message}").ConfigureAwait(false);
-            return 1;
+            await Console.Error.WriteLineAsync($"error: {result.ErrorMessage}").ConfigureAwait(false);
+            return result.ExitCode;
         }
 
         if (settings.Json)
-            Console.WriteLine(ReportRenderer.RenderJson(report));
+            Console.WriteLine(ReportRenderer.RenderJson(result.Report!));
         else
-            ReportRenderer.RenderCard(report, AnsiConsole.Console, Title(settings));
+            ReportRenderer.RenderCard(result.Report!, AnsiConsole.Console, Title(settings));
 
         return 0;
     }
