@@ -55,7 +55,10 @@ public static class SessionReportRenderer
         totals.AddRow("Schema (menu, paid once)", $"{approx}{report.SchemaTokens.ToString("N0", CultureInfo.InvariantCulture)}");
         totals.AddRow("Calls total", $"{approx}{report.CallsTotal.ToString("N0", CultureInfo.InvariantCulture)}");
         totals.AddRow("Responses total", $"{approx}{report.ResponsesTotal.ToString("N0", CultureInfo.InvariantCulture)}");
-        totals.AddRow("Peak context", $"{approx}{report.PeakContextTokens.ToString("N0", CultureInfo.InvariantCulture)}  ({report.PeakPercentWindow.ToString("F1", CultureInfo.InvariantCulture)}% window)");
+        var peakColor = TaxSeverity.Color(report.PeakPercentWindow);
+        totals.AddRow(
+            "Peak context",
+            $"{approx}{report.PeakContextTokens.ToString("N0", CultureInfo.InvariantCulture)}  ([{peakColor}]{report.PeakPercentWindow.ToString("F1", CultureInfo.InvariantCulture)}% window[/])");
         totals.AddRow("Counted with",
             Markup.Escape(isEstimate ? report.CounterLabel : $"{report.CounterLabel} · {report.ModelId}"));
         console.Write(totals);

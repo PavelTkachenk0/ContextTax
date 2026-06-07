@@ -53,6 +53,18 @@ public class SessionReportRendererTests
     }
 
     [Fact]
+    public void RenderCard_colours_a_high_peak_window()
+    {
+        var report = Sample with { PeakPercentWindow = 42.0 };
+        var console = new TestConsole().EmitAnsiSequences();
+        SessionReportRenderer.RenderCard(report, console, "x");
+        var output = console.Output;
+
+        Assert.Contains("[", output);   // an ANSI colour sequence was emitted
+        Assert.Contains("42.0", output);
+    }
+
+    [Fact]
     public void RenderCard_formats_numbers_invariantly_under_comma_locale()
     {
         var prev = CultureInfo.CurrentCulture;
