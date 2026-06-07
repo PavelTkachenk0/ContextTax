@@ -99,6 +99,20 @@ contexttax measure --server github --window 200000        # ✓ count_tokens
 contexttax measure --server github --window 200000 -e     # ≈ o200k estimate
 ```
 
+See the full [**MCP Context-Tax Leaderboard →**](LEADERBOARD.md) (PRs welcome).
+
+## "But I heard GitHub MCP is 55K tokens?"
+
+You may have seen GitHub MCP cited at [~42K, or ~55K across 93 tools](https://getunblocked.com/blog/github-mcp-token-cost/) — *"a quarter of your window before you type a word."* Those community numbers raised the alarm, and the direction is right. But they're estimates with **no stated tokenizer or scope** (schemas only? plus server instructions? which version?), and their per-tool breakdowns are explicitly *"illustrative, not precise."*
+
+ContextTax makes it exact:
+
+- **Tokenizer:** Anthropic `count_tokens` — Claude's *own* tokenizer, not an o200k / tiktoken estimate.
+- **Scope:** the marginal cost the **tool schemas** add to a request — what you actually pay.
+- **Pinned:** a specific `ghcr.io/github/github-mcp-server` version (the toolset grows every release).
+
+The real number for the current server: **10,928 tokens (5.5%)** on the default toolset, **20,404 (10.2%)** with all 82 toolset tools. Lower than 55K — that figure counted more tools with an unstated method — but **precise, version-pinned, and reproducible.** The tax is real; now it has a real number.
+
 ## Build from source
 
 ```sh
