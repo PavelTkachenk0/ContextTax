@@ -2,9 +2,12 @@ using ContextTax.Cli.Commands;
 using Spectre.Console.Cli;
 
 var app = new CommandApp();
+app.SetDefaultCommand<InteractiveCommand>();
 app.Configure(config =>
 {
     config.SetApplicationName("contexttax");
+    config.AddCommand<InteractiveCommand>("interactive")
+        .WithDescription("Launch the interactive menu (also the default when run with no arguments).");
     config.AddCommand<MeasureCommand>("measure")
         .WithDescription("Measure the static schema-token cost of an MCP server's tools.");
     config.AddCommand<SessionCommand>("session")
