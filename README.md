@@ -91,7 +91,7 @@ ContextTax measures real MCP servers with **Anthropic `count_tokens`** (ground t
 | GitHub (all toolsets) | 82 | ~16,327 | **20,404 (10.2%)** | +25% |
 | Azure | 65 | ~16,364 | **18,983 (9.5%)** | +16% |
 
-**The finding:** the keyless o200k proxy **undercounts Claude's real tokenization by 16–43%** — treat it as a conservative *floor*, not the truth. For the GitHub MCP server the real cost is **~27% higher** than the estimate. <sub>(`count_tokens` · `claude-sonnet-4-5` · 200K window; GitHub measured against `ghcr.io/github/github-mcp-server`, default toolset — deterministic, so you'll get the same numbers.)</sub>
+**The finding:** for these tool schemas the keyless o200k proxy **undercounts Claude by 16–43%** (GitHub: real cost **~27% above** the estimate). It's a proxy, not ground truth — and it cuts both ways: the verbose response in the next section lands ~7% *under* its o200k estimate. Prefer `count_tokens` for any number you cite. <sub>(`count_tokens` · `claude-sonnet-4-5` · 200K window; GitHub measured against `ghcr.io/github/github-mcp-server`, default toolset — deterministic, so you'll get the same numbers.)</sub>
 
 Reproduce — ground truth needs a funded `ANTHROPIC_API_KEY`; add `-e` for the keyless o200k estimate:
 ```sh
@@ -100,6 +100,22 @@ contexttax measure --server github --window 200000 -e     # ≈ o200k estimate
 ```
 
 See the full [**MCP Context-Tax Leaderboard →**](LEADERBOARD.md) (PRs welcome).
+
+## Schemas are only half the tax
+
+Loading a server's tools is the **fixed** cost. The **recurring** cost is every tool *response* — and responses dwarf schemas. ContextTax measures those too (`contexttax response`):
+
+| One tool call | Response tokens (`✓ count_tokens`) | % of a 200K window |
+|---------------|-----------------------------------:|-------------------:|
+| Playwright `browser_snapshot` of one GitHub page | **38,831** | **19.4%** |
+
+That's **one** `browser_snapshot` — about **8× Playwright's entire 4,633-token schema**, nearly a fifth of your window, on a single call. You load the schema once; responses land on *every* call. Almost nobody measures this:
+
+```sh
+contexttax response snapshot.yml                # measure a captured response
+pbpaste | contexttax response                   # or paste one straight in
+contexttax response before.json -d after.json   # diff an optimisation
+```
 
 ## "But I heard GitHub MCP is 55K tokens?"
 
