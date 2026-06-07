@@ -131,6 +131,16 @@ deps are the o200k_base tokenizer packages (computation, not UI/framework) and t
   a patched `Microsoft.Bcl.Memory` (a vulnerable transitive of the tokenizer data package).
   `Spectre.Console.Testing` is a **test-only** dep (SP8) for asserting rendered card output.
 - `.editorconfig` — style, enforced by `dotnet format` in CI.
+- **Packaging / distribution (SP10):** `ContextTax.Cli` csproj sets `<AssemblyName>contexttax</AssemblyName>`
+  + `<InvariantGlobalization>true</…>`; **publish-only** flags (`-r <rid> --self-contained
+  -p:PublishSingleFile -p:EnableCompressionInSingleFile`, no trim/AOT) live on the `dotnet publish` line in
+  `scripts/publish.sh`, so dev builds stay framework-dependent. A tagged **`.github/workflows/release.yml`**
+  runs `publish.sh` → a GitHub Release (4 RIDs + `install.sh`/`install.ps1`, stable asset names); `ci.yml`
+  is untouched. `contexttax --version` comes from the assembly informational version. The README front door
+  uses committed `assets/*.svg` via `<img>` + `<picture>`. See ADR 0011.
+- **Measurement fix (ADR 0012):** `Measurement/ToolResultPadding` pads a dangling `tool_use` with an empty
+  `tool_result` so the `response` / `session` marginal-delta requests are valid for `count_tokens` (which
+  rejects a dangling `tool_use`; the offline o200k estimate never validated, so the bug hid until a funded key).
 
 ## Where things live
 - Product concept → `product-brief.md`
@@ -139,8 +149,8 @@ deps are the o200k_base tokenizer packages (computation, not UI/framework) and t
 - Conventions → `conventions.md`
 
 ## Not yet built
-Packaging (a `contexttax` global tool — the next step) and **live `--call`** (invoke a tool and measure
-its *real* response — deferred; it breaks read-only and needs a safety model for mutating server tools),
-plus the strategy-comparison harness and subscription budget mode. The **web dashboard** is built but
-**frozen** in branch `feat/web-dashboard` (local ASP.NET Razor Pages — leaderboard + report card;
-Dataset/Models/Pages/wwwroot; not merged) — revisited later. Next up: packaging (see `roadmap.md`).
+**Live `--call`** (invoke a tool and measure its *real* response — deferred; it breaks read-only and needs
+a safety model for mutating server tools), the strategy-comparison harness, and subscription budget mode.
+The **web dashboard** is built but **frozen** in branch `feat/web-dashboard` (local ASP.NET Razor Pages —
+leaderboard + report card; Dataset/Models/Pages/wwwroot; not merged) — revisited later. Next up: the
+**launch** (post + GitHub About/topics) and live `--call` (see `roadmap.md`).

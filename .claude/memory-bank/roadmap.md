@@ -52,6 +52,23 @@
   tool_result` turn over the **same** `ITokenCounter` (ground-truth + estimate free; zero counting-layer
   change). Read-only invariant (ADR 0007) intact — no `tools/call`; live `--call` deferred. Mode-aware
   card (before/after bars + coloured headline) + `--json` + interactive menu entry. See `architecture.md` + ADR 0010.
+- **SP10 — Packaging + public launch:** ✅ done & **shipped (v1.0.0 → v1.0.1)**. `contexttax` now runs as a
+  **self-contained, single-file binary** on **GitHub Releases** (no `dotnet run`, no .NET on the user's box)
+  for `osx-arm64`/`osx-x64`/`linux-x64`/`win-x64` — built by a tagged `release.yml` (one ubuntu job,
+  cross-compiled; `softprops/action-gh-release`, stable asset names), installable via one-line
+  `install.sh`/`install.ps1`. No NuGet, no trim/AOT (compression instead). `--version`,
+  `InvariantGlobalization`. Editorial README (SVG hero light/dark via `<picture>` + terminal demo +
+  Downloads + Reproduce + the **"55K" reconciliation** + a **response-bloat** section) and a PR-driven
+  `LEADERBOARD.md`. **Repo is public.** ADR 0011.
+  - **Ground-truth verified** (funded API): `count_tokens` headline — **GitHub MCP 10,928 tok / 5.5%** of a
+    200K window (default toolset; 20,404 / 10.2% all toolsets), beside the o200k estimate. **Calibration
+    data:** o200k vs `count_tokens` **cuts both ways** — tool schemas undercount 16–43%, while a large
+    response (Playwright `browser_snapshot` = 38,831 tok / 19.4%) overcounts ~7%.
+  - **Bugfix (ADR 0012):** dogfooding ground-truth caught that `response`/`session` built message prefixes
+    ending at a **dangling `tool_use`** → `count_tokens` HTTP 400 (masked by the non-validating o200k
+    estimate — the maintainer had only ever run `--estimate`). Fixed by padding a dangling `tool_use` with
+    a synthetic **empty** `tool_result` (`ToolResultPadding`, shared by both measurers); regression guard
+    added; confirmed live. Shipped as **v1.0.1**.
 
 ## Decomposition
 1. **Repository Foundation** — ✅ done (SP1).
@@ -73,11 +90,16 @@
 9. **Automated response measurement** — ✅ done (SP9). The `response` command: count a captured
    response's tokens + % window and diff before/after, from a file / piped stdin / macOS clipboard;
    marginal-delta synthetic turn; read-only intact (live `--call` deferred). Merged (#4).
-10. **Strategy comparison harness** — static / tool-search / dynamic / progressive / code; with variance.
+10. **Packaging + public launch** — ✅ done (SP10). Self-contained cross-platform binaries on GitHub
+    Releases (no NuGet, no .NET runtime), tagged `release.yml`, one-line installers, release-ready README
+    + real ground-truth loud number + `LEADERBOARD.md`; ground-truth path verified; the dangling-`tool_use`
+    bugfix (ADR 0012). Shipped **v1.0.0 → v1.0.1**; repo public.
+11. **Strategy comparison harness** — static / tool-search / dynamic / progressive / code; with variance.
 
 ## Deferred / open
-- **Estimate calibration** — calibrate the o200k_base proxy against ground truth (a
-  correction factor) once funded-API access is available. Out of scope for SP3 by design.
+- **Estimate calibration** — funded-API access now exists; first data shows o200k vs `count_tokens`
+  **cuts both ways** (tool schemas −16–43%, a big accessibility-tree response +~7%), so a single
+  correction factor won't do — a content-aware calibration is a possible follow-up. (Was out of scope for SP3.)
 - **Claude Code hooks** — revisit (maintainer flagged). Candidate: a commit-guard hook
   complementing CI.
 - **Web tech — decided (SP7, frozen):** local ASP.NET Razor Pages (not Blazor/SSG/SPA) — runs on
@@ -90,20 +112,18 @@
 - **Model → window/price table — considered & DROPPED (2026-06-07).** No reliable auto-source
   (Anthropic `/v1/models` has no window/price; pricing is web-only) → only a stale manual table;
   value is mere convenience (`--window`/`--price` already work). Don't re-propose without an auto-source.
-- **Packaging** — ship `contexttax` as a .NET global tool (`PackAsTool` + `dotnet pack`)
-  and/or a `dotnet publish` single-file binary, so it runs without `dotnet run`.
 - **Command-level CLI tests** — exit-code coverage for `MeasureCommand`/`SessionCommand`
   (today covered only via the loaders/measurer).
 
 ## Next
-SP9 (automated response measurement) done & merged (#4); SP7 (web) built but **frozen** in a branch.
-Direction (maintainer, 2026-06-07): make the CLI genuinely useful before any second surface.
-- **Packaging (NEXT).** Ship `contexttax` as a .NET global tool (`PackAsTool` + `dotnet pack`) and/or a
-  single-file `dotnet publish`, so it runs without the `dotnet run --project …` prefix. Was deferred
-  behind the response feature — now the front-runner.
-- **Live `--call` (own cycle).** The "pick server → tool → invoke → measure the real response"
-  zero-touch flow (what the maintainer initially pictured). Breaks read-only (ADR 0007) and is unsafe
-  against mutating server tools — needs an opt-in flag, a new ADR, and a safety model (explicit
-  tool+args, never auto-called, a side-effect warning). Reuses the SP5 `IToolSource` connection.
-- **Web dashboard** — unfreeze later if still wanted.
-- **Strategy comparison harness** — later.
+SP10 (packaging + public launch) shipped **v1.0.0 → v1.0.1**; repo is **public**; the ground-truth path
+is verified and the dangling-`tool_use` bug is fixed (ADR 0012). SP7 (web) built but **frozen** in a branch.
+Direction (maintainer, 2026-06-08): the code is ready — the **name comes from the launch**.
+- **Launch / reputation (the lever).** Write the post (the *real* number vs the mythical "55K" + the
+  response-bloat moat) → Show HN / r/LocalLLaMA / r/ClaudeAI. Fill GitHub **About + topics** (manual — the
+  PAT can't; text is ready, or connect the Chrome extension and the assistant sets it). Grow `LEADERBOARD.md` via PRs.
+- **Live `--call` (own cycle).** The "pick server → tool → invoke → measure the real response" flow. Breaks
+  read-only (ADR 0007), unsafe vs mutating server tools — needs an opt-in flag, a new ADR, and a safety
+  model (explicit tool+args, never auto-called, a side-effect warning). Reuses the SP5 `IToolSource`.
+- **Estimate calibration** — content-aware (o200k cuts both ways; data in hand).
+- **Strategy comparison harness (#11)**, **web dashboard** (unfreeze) — later.
