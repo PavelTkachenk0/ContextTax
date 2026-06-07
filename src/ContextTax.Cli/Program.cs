@@ -1,5 +1,9 @@
+using System.Globalization;
 using ContextTax.Cli.Commands;
 using Spectre.Console.Cli;
+
+CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
+CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
 
 var app = new CommandApp();
 app.SetDefaultCommand<InteractiveCommand>();
