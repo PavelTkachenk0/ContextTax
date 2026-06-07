@@ -65,7 +65,7 @@ deps are the o200k_base tokenizer packages (computation, not UI/framework) and t
   response-bloat headline ratios, same `Mode`/`CounterLabel` provenance — tokens + % window,
   no `$`.
 
-## CLI (built in SP2–SP6)
+## CLI (built in SP2–SP6, polished SP8)
 - `MeasureCommand` — `measure (--tools <path> | --server <name> | --url <url> [--header "K: V"]…)
   [--config] [--timeout] [--model] [--window] [--price] [--json] [--estimate]`. Tool-source,
   counter selection, and the resolve→count→measure run are delegated to the shared `Support/`
@@ -95,8 +95,15 @@ deps are the o200k_base tokenizer packages (computation, not UI/framework) and t
   source / server-from-config / mode; header values entered masked) → the shared `MeasurementRunner`
   → the existing cards. Every prompt is cancellable back to the menu (`← Back` / blank entry); a
   failed action is shown and returns to the menu (never crashes). No new measurement logic.
-- `Program.cs` — builds the Spectre `CommandApp`; `SetDefaultCommand<InteractiveCommand>()`
-  (no-args → interactive) + registers `interactive` + `measure` + `session` + `servers`.
+- `Program.cs` — sets `InvariantCulture` globally (SP8, locale-independent output) then builds the
+  Spectre `CommandApp`; `SetDefaultCommand<InteractiveCommand>()` (no-args → interactive) + registers
+  `interactive` + `measure` + `session` + `servers`; `--help` carries usage examples (`AddExample`).
+- **SP8 — CLI polish (`Rendering/`):** all card numbers format with `InvariantCulture` (global in
+  `Program` *and* explicit per-format, so output is locale-independent and unit-testable). New
+  `TaxSeverity` (percent → Low/Medium/High → Spectre colour; thresholds 5/10 %) colours the tax /
+  peak-% figures; `TokenBar` renders fixed-width `█/░` offender bars. Every flag gained a short alias
+  (`-s/-e/-t/-u/-c/-m/-w/-j/-p/-H`; session `-f` = `--transcript`) with example-bearing descriptions.
+  Renderer output is asserted with a `TestConsole` (test-only `Spectre.Console.Testing`). Core untouched.
 
 ## Build configuration (shared)
 - `global.json` pins the .NET 10 SDK.
@@ -106,6 +113,7 @@ deps are the o200k_base tokenizer packages (computation, not UI/framework) and t
   tokenizer packages (`Microsoft.ML.Tokenizers` + `…Data.O200kBase`, SP3), and
   `ModelContextProtocol` (the client SDK, SP5). `CentralPackageTransitivePinningEnabled` pins
   a patched `Microsoft.Bcl.Memory` (a vulnerable transitive of the tokenizer data package).
+  `Spectre.Console.Testing` is a **test-only** dep (SP8) for asserting rendered card output.
 - `.editorconfig` — style, enforced by `dotnet format` in CI.
 
 ## Where things live
@@ -115,5 +123,8 @@ deps are the o200k_base tokenizer packages (computation, not UI/framework) and t
 - Conventions → `conventions.md`
 
 ## Not yet built
-The web dashboard, the strategy-comparison harness, subscription budget mode, and packaging
-(a `contexttax` global tool). Next up: the web dashboard (see `roadmap.md`).
+Automated response measurement (the next focus — a usable `measure`-like flow for response-bloat +
+before/after diff), the strategy-comparison harness, subscription budget mode, and packaging (a
+`contexttax` global tool). The **web dashboard** is built but **frozen** in branch
+`feat/web-dashboard` (local ASP.NET Razor Pages — leaderboard + report card; Dataset/Models/Pages/
+wwwroot; not merged) — revisited later. Next up: response measurement (see `roadmap.md`).

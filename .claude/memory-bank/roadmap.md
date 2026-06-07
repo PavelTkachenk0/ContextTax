@@ -35,6 +35,16 @@
   **`MeasurementRunner`** (extracted resolve→count→measure core + typed `RunResult`) now backs both
   the flag commands and the interactive mode (de-dup). Every prompt is cancellable back to the menu;
   a failed action never crashes the loop. See `architecture.md` and ADR 0008.
+- **SP7 — Web dashboard / leaderboard:** built & working (local ASP.NET Razor Pages — context-tax
+  leaderboard + per-server report card, editorial/Anthropic design, empty-state, gitignored local
+  dataset). **Frozen in branch `feat/web-dashboard` — NOT merged.** Mid-build the maintainer judged a
+  local "pretty render of measurements" weak next to the CLI (*one great CLI beats two half-finished
+  clients*); de-prioritised in favour of CLI quality + the response-measurement feature. Spec/plan
+  local-only; revisit after response-measurement + packaging.
+- **SP8 — CLI polish:** ✅ merged (#3). Locale-independent numbers (`InvariantCulture` global in
+  `Program` + explicit in renderers — kills comma-locale `0,6`), severity-coloured tax/peak %
+  (green/yellow/red), ASCII offender bars, short flag aliases (`-s/-e/-t/…`, session `-f`), `--help`
+  examples. Cli only; Core untouched; `--json` byte-identical. See `architecture.md` + ADR 0009.
 
 ## Decomposition
 1. **Repository Foundation** — ✅ done (SP1).
@@ -49,17 +59,21 @@
    command; shared `ToolSourceResolver`/`CounterFactory`.
 6. **Interactive CLI UX** — ✅ done (SP6). A Spectre menu-loop (default command) over the shared
    `MeasurementRunner`; flag commands unchanged.
-7. **Web dashboard / leaderboard.**
-8. **Strategy comparison harness** — static / tool-search / dynamic / progressive /
-   code mode; reproducible, with variance.
+7. **Web dashboard / leaderboard** — ⏸ built & **frozen** in a branch (not merged); de-prioritised
+   for CLI quality. Revisit later.
+8. **CLI polish** — ✅ done (SP8). Invariant numbers, severity colour, offender bars, flag aliases,
+   `--help` examples. Merged (#3).
+9. **Automated response measurement** — measure a tool's *response* cost (and diff before/after
+   optimisation) without hand-built transcripts. **The next focus.**
+10. **Strategy comparison harness** — static / tool-search / dynamic / progressive / code; with variance.
 
 ## Deferred / open
 - **Estimate calibration** — calibrate the o200k_base proxy against ground truth (a
   correction factor) once funded-API access is available. Out of scope for SP3 by design.
 - **Claude Code hooks** — revisit (maintainer flagged). Candidate: a commit-guard hook
   complementing CI.
-- **Web tech** — Blazor vs static-HTML generator vs API+SPA — decide in the web
-  sub-project.
+- **Web tech — decided (SP7, frozen):** local ASP.NET Razor Pages (not Blazor/SSG/SPA) — runs on
+  `localhost`, single .NET stack, gitignored local dataset, empty-state. In `feat/web-dashboard`.
 - **Cross-model support** — per-provider token counting beyond Anthropic.
 - **CI vs preview SDK** — CI installs the latest 10.0 SDK via `dotnet-quality:
   preview` (resilient to the exact-preview pin; `global.json`'s `rollForward:
@@ -74,8 +88,15 @@
   (today covered only via the loaders/measurer).
 
 ## Next
-SP6 (interactive CLI UX) is done. Agreed remaining order (brainstorm → spec → plan → implement →
-`/sync-memory` each):
-- **Web dashboard / leaderboard** — surface the measurements (web tech TBD). **Next up.**
-- **Strategy comparison harness** — static / tool-search / dynamic / progressive / code mode.
-- **Packaging** — ship `contexttax` as a .NET global tool / single-file publish (likely a later session).
+SP8 (CLI polish) done & merged; SP7 (web) built but **frozen** in a branch. Direction (maintainer,
+2026-06-07): make the CLI genuinely useful before any second surface.
+- **Automated response measurement (NEXT — key feature).** Today, measuring a tool's *response* cost
+  needs a hand-built `session --transcript …` — too fiddly ("nobody will do that by hand"). Design a
+  `measure`-easy flow: count a captured tool response's tokens (+ % window) and **diff before/after
+  optimisation** (e.g. `response before.json --against after.json`), ideally without manual assembly.
+  This is the project's wedge (response-bloat + optimisation comparison) made usable — a micro
+  strategy-comparison. Own brainstorm → spec → plan.
+- **Packaging** — `contexttax` as a .NET global tool / single-file (removes the `dotnet run` prefix).
+  Deferred behind the response feature (maintainer: ship the key function first).
+- **Web dashboard** — unfreeze later if still wanted.
+- **Strategy comparison harness** — later.

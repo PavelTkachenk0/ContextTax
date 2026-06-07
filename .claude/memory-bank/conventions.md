@@ -2,6 +2,9 @@
 
 ## Code style
 - `.editorconfig` is authoritative; `dotnet format --verify-no-changes` must pass.
+- **CLI output is locale-independent:** numbers format with `InvariantCulture` (set globally in
+  `Program` **and** explicit per-format in the renderers, so they stay correct under unit tests). Never
+  rely on the machine locale for displayed numbers (SP8 fixed comma-locale bugs like `0,6`).
 - `Nullable` enabled; compiler warnings are errors. No suppressions without a comment
   saying why.
 - A vulnerable transitive package breaks the warnings-as-errors build (NU1903). Pin it to
