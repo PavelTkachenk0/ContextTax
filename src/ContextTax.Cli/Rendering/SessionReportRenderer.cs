@@ -25,7 +25,7 @@ public static class SessionReportRenderer
 
         console.MarkupLine(
             $"[bold]ContextTax[/] · session · [green]{Markup.Escape(title)}[/]   {badge}   "
-            + $"[grey]{report.TurnCount} turns · {report.ContextWindowTokens:N0} window[/]");
+            + $"[grey]{report.TurnCount.ToString(CultureInfo.InvariantCulture)} turns · {report.ContextWindowTokens.ToString("N0", CultureInfo.InvariantCulture)} window[/]");
 
         var table = new Table().Border(TableBorder.Rounded);
         table.AddColumn("#");
@@ -40,11 +40,11 @@ public static class SessionReportRenderer
             table.AddRow(
                 t.Index.ToString(CultureInfo.InvariantCulture),
                 Markup.Escape(t.ToolName),
-                $"{approx}{t.CallTokens:N0}",
-                $"{approx}{t.ResponseTokens:N0}",
-                $"{approx}{t.AddedTokens:N0}",
-                $"{approx}{t.CumulativeTokens:N0}",
-                $"{t.PercentWindow:F1}%");
+                $"{approx}{t.CallTokens.ToString("N0", CultureInfo.InvariantCulture)}",
+                $"{approx}{t.ResponseTokens.ToString("N0", CultureInfo.InvariantCulture)}",
+                $"{approx}{t.AddedTokens.ToString("N0", CultureInfo.InvariantCulture)}",
+                $"{approx}{t.CumulativeTokens.ToString("N0", CultureInfo.InvariantCulture)}",
+                $"{t.PercentWindow.ToString("F1", CultureInfo.InvariantCulture)}%");
         }
 
         console.Write(table);
@@ -52,17 +52,17 @@ public static class SessionReportRenderer
         var totals = new Table().Border(TableBorder.Rounded);
         totals.AddColumn("Metric");
         totals.AddColumn(new TableColumn("Value").RightAligned());
-        totals.AddRow("Schema (menu, paid once)", $"{approx}{report.SchemaTokens:N0}");
-        totals.AddRow("Calls total", $"{approx}{report.CallsTotal:N0}");
-        totals.AddRow("Responses total", $"{approx}{report.ResponsesTotal:N0}");
-        totals.AddRow("Peak context", $"{approx}{report.PeakContextTokens:N0}  ({report.PeakPercentWindow:F1}% window)");
+        totals.AddRow("Schema (menu, paid once)", $"{approx}{report.SchemaTokens.ToString("N0", CultureInfo.InvariantCulture)}");
+        totals.AddRow("Calls total", $"{approx}{report.CallsTotal.ToString("N0", CultureInfo.InvariantCulture)}");
+        totals.AddRow("Responses total", $"{approx}{report.ResponsesTotal.ToString("N0", CultureInfo.InvariantCulture)}");
+        totals.AddRow("Peak context", $"{approx}{report.PeakContextTokens.ToString("N0", CultureInfo.InvariantCulture)}  ({report.PeakPercentWindow.ToString("F1", CultureInfo.InvariantCulture)}% window)");
         totals.AddRow("Counted with",
             Markup.Escape(isEstimate ? report.CounterLabel : $"{report.CounterLabel} · {report.ModelId}"));
         console.Write(totals);
 
         console.MarkupLine(
-            $"[bold]Headline:[/] responses are {report.ResponseToSchemaRatio:F1}× the schema; "
-            + $"{report.ResponseShareOfContext * 100:F0}% of session context is tool responses.");
+            $"[bold]Headline:[/] responses are {report.ResponseToSchemaRatio.ToString("F1", CultureInfo.InvariantCulture)}× the schema; "
+            + $"{(report.ResponseShareOfContext * 100).ToString("F0", CultureInfo.InvariantCulture)}% of session context is tool responses.");
 
         if (isEstimate)
         {
