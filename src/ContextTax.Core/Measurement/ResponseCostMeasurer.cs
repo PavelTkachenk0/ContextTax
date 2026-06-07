@@ -29,8 +29,11 @@ public sealed class ResponseCostMeasurer
         var result = new TranscriptMessage("user",
             new ContentBlock[] { new ToolResultBlock(SyntheticToolUseId, JsonValue.Create(responseText)!) });
 
+        // The baseline must be a valid count_tokens request, so it carries an EMPTY tool_result
+        // (not a dangling tool_use). Its constant framing cancels in the delta, leaving the payload. (ADR 0012)
+        var baselineMessages = ToolResultPadding.PadDanglingToolUse(new[] { prompt, call });
         var baseline = await _counter
-            .CountAsync(options.Model, new CountInput { Messages = new[] { prompt, call } }, cancellationToken)
+            .CountAsync(options.Model, new CountInput { Messages = baselineMessages }, cancellationToken)
             .ConfigureAwait(false);
         var withResult = await _counter
             .CountAsync(options.Model, new CountInput { Messages = new[] { prompt, call, result } }, cancellationToken)

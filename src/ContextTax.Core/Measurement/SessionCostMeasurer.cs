@@ -48,7 +48,9 @@ public sealed class SessionCostMeasurer
 
         for (var i = 0; i < messages.Count; i++)
         {
-            var prefix = messages.Take(i + 1).ToArray();
+            // A prefix that ends at an assistant tool_use is padded with an empty tool_result so the
+            // count_tokens request is valid; the constant framing is absorbed into the call delta. (ADR 0012)
+            var prefix = ToolResultPadding.PadDanglingToolUse(messages.Take(i + 1).ToArray());
             var cumulative = await _counter
                 .CountAsync(options.Model, new CountInput { Tools = tools, Messages = prefix }, cancellationToken)
                 .ConfigureAwait(false);
