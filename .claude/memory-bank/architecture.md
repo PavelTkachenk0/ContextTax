@@ -65,11 +65,11 @@ deps are the o200k_base tokenizer packages (computation, not UI/framework) and t
   response-bloat headline ratios, same `Mode`/`CounterLabel` provenance — tokens + % window,
   no `$`.
 
-## CLI (built in SP2–SP5)
+## CLI (built in SP2–SP6)
 - `MeasureCommand` — `measure (--tools <path> | --server <name> | --url <url> [--header "K: V"]…)
-  [--config] [--timeout] [--model] [--window] [--price] [--json] [--estimate]`. Tool-source and
-  counter selection are delegated to the shared `Support/` helpers (below), so the command stays
-  thin. `--estimate` selects the offline counter (keyless); without it the ground-truth path
+  [--config] [--timeout] [--model] [--window] [--price] [--json] [--estimate]`. Tool-source,
+  counter selection, and the resolve→count→measure run are delegated to the shared `Support/`
+  helpers (`MeasurementRunner` et al., below), so the command stays thin. `--estimate` selects the offline counter (keyless); without it the ground-truth path
   needs a key, and the no-key error points the user at `--estimate`.
 - `ReportRenderer` — a **mode-aware** Spectre card (a `✓ GROUND TRUTH` / `≈ ESTIMATE` badge,
   `~`-prefixed approximate numbers, an estimate disclaimer footer) **or** JSON (emits `Mode`
@@ -82,12 +82,21 @@ deps are the o200k_base tokenizer packages (computation, not UI/framework) and t
 - `ServersCommand` (SP5) — `servers [--config] [--json]` lists discovered servers via
   `McpConfigResolver.List()` (no connection); `Rendering/ServersRenderer` renders a table or
   `--json`, emitting header **key names only** (values never surfaced).
-- `Support/` (SP5) — `ToolSourceResolver` resolves `--tools | --server | --url` → `McpTool[]`
+- `Support/` (SP5–SP6) — `ToolSourceResolver` resolves `--tools | --server | --url` → `McpTool[]`
   (a `Func<McpServerConfig, IToolSource>` factory is injected so tests use a fake; a malformed
   `--header` → exit 2 without echoing the value); `CounterFactory` selects the counter and owns
   the `HttpClient` lifetime; `McpConfig` builds the layered resolver from `./.mcp.json` +
-  `~/.claude.json`. Both helpers are shared by `measure` + `session`.
-- `Program.cs` — builds the Spectre `CommandApp` (registers `measure` + `session` + `servers`).
+  `~/.claude.json`. **SP6:** `MeasurementRunner` (+ `RunResult<T>`) is the extracted
+  resolve→count→measure core — given a `ToolSourceOptions` + a counter it returns a report **or**
+  a friendly `(message, exitCode)`; both the flag commands and the interactive mode call it (one
+  code path). Shared by `measure` + `session` (+ interactive).
+- `Interactive/` + `Commands/InteractiveCommand` (SP6) — the menu-loop, the **default command**
+  when run with no args: a banner + `SelectionPrompt` menu → guided prompts (`InteractivePrompts`:
+  source / server-from-config / mode; header values entered masked) → the shared `MeasurementRunner`
+  → the existing cards. Every prompt is cancellable back to the menu (`← Back` / blank entry); a
+  failed action is shown and returns to the menu (never crashes). No new measurement logic.
+- `Program.cs` — builds the Spectre `CommandApp`; `SetDefaultCommand<InteractiveCommand>()`
+  (no-args → interactive) + registers `interactive` + `measure` + `session` + `servers`.
 
 ## Build configuration (shared)
 - `global.json` pins the .NET 10 SDK.
@@ -106,5 +115,5 @@ deps are the o200k_base tokenizer packages (computation, not UI/framework) and t
 - Conventions → `conventions.md`
 
 ## Not yet built
-The strategy-comparison harness, subscription budget mode, and the web dashboard. Next up:
-the strategy-comparison harness (or another parking-lot item — see `roadmap.md`).
+The web dashboard, the strategy-comparison harness, subscription budget mode, and packaging
+(a `contexttax` global tool). Next up: the web dashboard (see `roadmap.md`).
