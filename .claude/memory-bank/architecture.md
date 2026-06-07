@@ -21,7 +21,7 @@
 deps are the o200k_base tokenizer packages (computation, not UI/framework) and the
 `ModelContextProtocol` client SDK (live ingestion); Spectre stays CLI-only.
 
-## Core internals (built in SP2–SP5)
+## Core internals (built in SP2–SP9)
 - **`Mcp/`** — `ToolsJsonLoader` parses a tools-JSON document (MCP `tools/list` shape or
   a bare array) → `IReadOnlyList<McpTool>`; `ToolsJsonException` for parse errors.
   (`LoadArray(JsonArray)` is reused by the transcript loader for embedded tools.)
@@ -64,8 +64,13 @@ deps are the o200k_base tokenizer packages (computation, not UI/framework) and t
   `SessionCostReport` (+ `TurnCost`): per-turn call/response split, cumulative context, peak,
   response-bloat headline ratios, same `Mode`/`CounterLabel` provenance — tokens + % window,
   no `$`.
+  **SP9:** `ResponseCostMeasurer` (pure; wraps a captured payload as a synthetic `user(".") →
+  assistant(tool_use) → user(tool_result)` turn and returns the **marginal delta** of the result
+  block over the same `ITokenCounter` — the constant prefix cancels, ADR 0010) → `ResponseCostReport`;
+  `ResponseDiff.Between(before, after)` (pure combinator) → `ResponseDiffReport` (signed `DeltaTokens`
+  + `DeltaPercent`, `null` at `before = 0`). Tokens + % window, no `$`; zero counting-layer change.
 
-## CLI (built in SP2–SP6, polished SP8)
+## CLI (built in SP2–SP6, polished SP8, response SP9)
 - `MeasureCommand` — `measure (--tools <path> | --server <name> | --url <url> [--header "K: V"]…)
   [--config] [--timeout] [--model] [--window] [--price] [--json] [--estimate]`. Tool-source,
   counter selection, and the resolve→count→measure run are delegated to the shared `Support/`
@@ -104,6 +109,17 @@ deps are the o200k_base tokenizer packages (computation, not UI/framework) and t
   peak-% figures; `TokenBar` renders fixed-width `█/░` offender bars. Every flag gained a short alias
   (`-s/-e/-t/-u/-c/-m/-w/-j/-p/-H`; session `-f` = `--transcript`) with example-bearing descriptions.
   Renderer output is asserted with a `TestConsole` (test-only `Spectre.Console.Testing`). Core untouched.
+- **SP9 — response measurement (`response` command):** `ResponseCommand` (`response [PATH] [-d|--delta
+  <path>] [-C|--clipboard] [-m] [-w] [-j] [-e]`) — capture-only, thin (counter via `CounterFactory`,
+  measure via the runner, render). Input is a file, **piped stdin** (PATH omitted + `IsInputRedirected`
+  — Spectre rejects a literal `-` positional), or the **macOS clipboard** via new `Support/ClipboardReader`
+  (`pbpaste`; single-response only). `MeasurementRunner` grew `RunResponseAsync` / `RunResponseDeltaAsync`
+  / `RunResponseTextAsync` + private `ReadInput` (file/stdin; guards a pasted blob without echoing it).
+  `Rendering/ResponseReportRenderer` — mode-aware single / diff cards (rounded table, `TaxSeverity`
+  colour, before/after `TokenBar` bars, coloured `Headline`, ASCII minus) + `--json`. Registered in
+  `Program.cs` (+ examples); the interactive menu gains a "Measure a captured response" entry with a
+  clipboard/file source choice. Neutral `samples/responses/weather.before|after.json` ship for a keyless
+  demo. Core untouched. See ADR 0010.
 
 ## Build configuration (shared)
 - `global.json` pins the .NET 10 SDK.
@@ -123,8 +139,8 @@ deps are the o200k_base tokenizer packages (computation, not UI/framework) and t
 - Conventions → `conventions.md`
 
 ## Not yet built
-Automated response measurement (the next focus — a usable `measure`-like flow for response-bloat +
-before/after diff), the strategy-comparison harness, subscription budget mode, and packaging (a
-`contexttax` global tool). The **web dashboard** is built but **frozen** in branch
-`feat/web-dashboard` (local ASP.NET Razor Pages — leaderboard + report card; Dataset/Models/Pages/
-wwwroot; not merged) — revisited later. Next up: response measurement (see `roadmap.md`).
+Packaging (a `contexttax` global tool — the next step) and **live `--call`** (invoke a tool and measure
+its *real* response — deferred; it breaks read-only and needs a safety model for mutating server tools),
+plus the strategy-comparison harness and subscription budget mode. The **web dashboard** is built but
+**frozen** in branch `feat/web-dashboard` (local ASP.NET Razor Pages — leaderboard + report card;
+Dataset/Models/Pages/wwwroot; not merged) — revisited later. Next up: packaging (see `roadmap.md`).

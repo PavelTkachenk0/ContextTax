@@ -45,6 +45,13 @@
   `Program` + explicit in renderers — kills comma-locale `0,6`), severity-coloured tax/peak %
   (green/yellow/red), ASCII offender bars, short flag aliases (`-s/-e/-t/…`, session `-f`), `--help`
   examples. Cli only; Core untouched; `--json` byte-identical. See `architecture.md` + ADR 0009.
+- **SP9 — Automated response measurement:** ✅ merged (#4). New `response` command — count a captured
+  tool response's tokens (+ % window) and **diff before/after** an optimisation (`response before -d
+  after` → "saved N tok (−X%)"), without a hand-built transcript. Capture-only input: a file, piped
+  stdin, or the macOS clipboard (`-C`/`pbpaste`). Cost = marginal delta of a synthetic `tool_use →
+  tool_result` turn over the **same** `ITokenCounter` (ground-truth + estimate free; zero counting-layer
+  change). Read-only invariant (ADR 0007) intact — no `tools/call`; live `--call` deferred. Mode-aware
+  card (before/after bars + coloured headline) + `--json` + interactive menu entry. See `architecture.md` + ADR 0010.
 
 ## Decomposition
 1. **Repository Foundation** — ✅ done (SP1).
@@ -63,8 +70,9 @@
    for CLI quality. Revisit later.
 8. **CLI polish** — ✅ done (SP8). Invariant numbers, severity colour, offender bars, flag aliases,
    `--help` examples. Merged (#3).
-9. **Automated response measurement** — measure a tool's *response* cost (and diff before/after
-   optimisation) without hand-built transcripts. **The next focus.**
+9. **Automated response measurement** — ✅ done (SP9). The `response` command: count a captured
+   response's tokens + % window and diff before/after, from a file / piped stdin / macOS clipboard;
+   marginal-delta synthetic turn; read-only intact (live `--call` deferred). Merged (#4).
 10. **Strategy comparison harness** — static / tool-search / dynamic / progressive / code; with variance.
 
 ## Deferred / open
@@ -88,15 +96,14 @@
   (today covered only via the loaders/measurer).
 
 ## Next
-SP8 (CLI polish) done & merged; SP7 (web) built but **frozen** in a branch. Direction (maintainer,
-2026-06-07): make the CLI genuinely useful before any second surface.
-- **Automated response measurement (NEXT — key feature).** Today, measuring a tool's *response* cost
-  needs a hand-built `session --transcript …` — too fiddly ("nobody will do that by hand"). Design a
-  `measure`-easy flow: count a captured tool response's tokens (+ % window) and **diff before/after
-  optimisation** (e.g. `response before.json --against after.json`), ideally without manual assembly.
-  This is the project's wedge (response-bloat + optimisation comparison) made usable — a micro
-  strategy-comparison. Own brainstorm → spec → plan.
-- **Packaging** — `contexttax` as a .NET global tool / single-file (removes the `dotnet run` prefix).
-  Deferred behind the response feature (maintainer: ship the key function first).
+SP9 (automated response measurement) done & merged (#4); SP7 (web) built but **frozen** in a branch.
+Direction (maintainer, 2026-06-07): make the CLI genuinely useful before any second surface.
+- **Packaging (NEXT).** Ship `contexttax` as a .NET global tool (`PackAsTool` + `dotnet pack`) and/or a
+  single-file `dotnet publish`, so it runs without the `dotnet run --project …` prefix. Was deferred
+  behind the response feature — now the front-runner.
+- **Live `--call` (own cycle).** The "pick server → tool → invoke → measure the real response"
+  zero-touch flow (what the maintainer initially pictured). Breaks read-only (ADR 0007) and is unsafe
+  against mutating server tools — needs an opt-in flag, a new ADR, and a safety model (explicit
+  tool+args, never auto-called, a side-effect warning). Reuses the SP5 `IToolSource` connection.
 - **Web dashboard** — unfreeze later if still wanted.
 - **Strategy comparison harness** — later.
