@@ -24,7 +24,7 @@ public static class ServersRenderer
 
     public static void RenderTable(IReadOnlyList<McpServerConfig> servers, IAnsiConsole console)
     {
-        console.MarkupLine($"[bold]ContextTax[/] · MCP servers · [green]{servers.Count}[/] found");
+        console.MarkupLine($"[bold]ContextTax[/] · MCP servers · [green]{servers.Count.ToString(System.Globalization.CultureInfo.InvariantCulture)}[/] found");
         var table = new Table().Border(TableBorder.Rounded);
         table.AddColumn("Name");
         table.AddColumn("Transport");
