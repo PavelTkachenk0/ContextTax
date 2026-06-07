@@ -445,3 +445,6 @@ appsettings.*.local.json
 
 # JetBrains Rider / IntelliJ IDE files
 .idea/
+
+# Local publish output
+dist/
