@@ -13,6 +13,8 @@ app.Configure(config =>
     config.AddExample("measure", "-s", "everything", "-e");
     config.AddExample("measure", "-t", "./fs.tools.json", "-e");
     config.AddExample("session", "-f", "./run.json", "-t", "./fs.tools.json", "-e");
+    config.AddExample("response", "./response.json", "-e");
+    config.AddExample("response", "./before.json", "-d", "./after.json", "-e");
     config.AddExample("servers");
     config.AddCommand<InteractiveCommand>("interactive")
         .WithDescription("Launch the interactive menu (also the default when run with no arguments).");
@@ -20,6 +22,8 @@ app.Configure(config =>
         .WithDescription("Measure the static schema-token cost of an MCP server's tools.");
     config.AddCommand<SessionCommand>("session")
         .WithDescription("Measure response bloat + lifecycle cost across a recorded transcript.");
+    config.AddCommand<ResponseCommand>("response")
+        .WithDescription("Measure a captured tool response's token cost (and diff before/after optimisation).");
     config.AddCommand<ServersCommand>("servers")
         .WithDescription("List MCP servers discovered in your config (no connection).");
 });

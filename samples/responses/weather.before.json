@@ -1,0 +1,9 @@
+{
+  "location": { "name": "Springfield", "region": "Example State", "country": "Exampleland", "lat": 39.8, "lon": -89.6, "timezone": "Example/Springfield", "localtime": "2026-06-07 14:00" },
+  "current": { "temp_c": 22.0, "temp_f": 71.6, "is_day": 1, "condition": { "text": "Partly cloudy", "code": 1003, "icon": "//cdn.example.com/weather/64x64/day/116.png" }, "humidity": 55, "wind_kph": 11.5, "wind_mph": 7.1, "wind_dir": "NW", "pressure_mb": 1012.0, "feelslike_c": 22.0, "uv": 4.0, "last_updated": "2026-06-07 14:00" },
+  "forecast": [
+    { "date": "2026-06-07", "day": { "maxtemp_c": 24.0, "mintemp_c": 14.0, "avgtemp_c": 19.0, "condition": { "text": "Sunny", "code": 1000, "icon": "//cdn.example.com/weather/64x64/day/113.png" }, "daily_chance_of_rain": 0, "totalprecip_mm": 0.0 } },
+    { "date": "2026-06-08", "day": { "maxtemp_c": 26.0, "mintemp_c": 15.0, "avgtemp_c": 20.5, "condition": { "text": "Sunny", "code": 1000, "icon": "//cdn.example.com/weather/64x64/day/113.png" }, "daily_chance_of_rain": 0, "totalprecip_mm": 0.0 } },
+    { "date": "2026-06-09", "day": { "maxtemp_c": 23.0, "mintemp_c": 13.0, "avgtemp_c": 18.0, "condition": { "text": "Light rain", "code": 1183, "icon": "//cdn.example.com/weather/64x64/day/296.png" }, "daily_chance_of_rain": 70, "totalprecip_mm": 4.2 } }
+  ]
+}
