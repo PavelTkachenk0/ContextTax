@@ -10,6 +10,10 @@ app.SetDefaultCommand<InteractiveCommand>();
 app.Configure(config =>
 {
     config.SetApplicationName("contexttax");
+    config.AddExample("measure", "-s", "everything", "-e");
+    config.AddExample("measure", "-t", "./fs.tools.json", "-e");
+    config.AddExample("session", "-f", "./run.json", "-t", "./fs.tools.json", "-e");
+    config.AddExample("servers");
     config.AddCommand<InteractiveCommand>("interactive")
         .WithDescription("Launch the interactive menu (also the default when run with no arguments).");
     config.AddCommand<MeasureCommand>("measure")

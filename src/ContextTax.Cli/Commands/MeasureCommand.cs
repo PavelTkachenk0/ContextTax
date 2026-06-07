@@ -11,48 +11,48 @@ public sealed class MeasureCommand : AsyncCommand<MeasureCommand.Settings>
 {
     public sealed class Settings : CommandSettings
     {
-        [CommandOption("--tools <PATH>")]
-        [Description("Path to a tools JSON file (MCP tools/list shape, or a bare array).")]
+        [CommandOption("-t|--tools <PATH>")]
+        [Description("Path to a tools JSON file (MCP tools/list shape or a bare array), e.g. ./fs.tools.json.")]
         public string? ToolsPath { get; set; }
 
-        [CommandOption("--server <NAME>")]
-        [Description("Measure a live MCP server by name from your MCP config (alternative to --tools).")]
+        [CommandOption("-s|--server <NAME>")]
+        [Description("Live MCP server name from your config, e.g. everything (alternative to --tools).")]
         public string? Server { get; set; }
 
-        [CommandOption("--url <URL>")]
-        [Description("Measure a live MCP server at an HTTP endpoint (alternative to --tools).")]
+        [CommandOption("-u|--url <URL>")]
+        [Description("Live MCP server HTTP endpoint, e.g. https://host/mcp (alternative to --tools).")]
         public string? Url { get; set; }
 
-        [CommandOption("--header <HEADER>")]
-        [Description("HTTP header for --url, as \"Key: Value\" (repeatable).")]
+        [CommandOption("-H|--header <HEADER>")]
+        [Description("HTTP header for --url, e.g. \"Authorization: Bearer abc\" (repeatable).")]
         public string[] Headers { get; set; } = [];
 
-        [CommandOption("--config <PATH>")]
-        [Description("MCP config file to read --server from (default: ./.mcp.json then ~/.claude.json).")]
+        [CommandOption("-c|--config <PATH>")]
+        [Description("MCP config file for --server (default: ./.mcp.json then ~/.claude.json).")]
         public string? ConfigPath { get; set; }
 
         [CommandOption("--timeout <SECONDS>")]
-        [Description("Connection timeout for --server/--url, in seconds.")]
+        [Description("Connection timeout for --server/--url in seconds, e.g. 30.")]
         public int TimeoutSeconds { get; set; } = 30;
 
-        [CommandOption("--model <ID>")]
-        [Description("Model id used for count_tokens.")]
+        [CommandOption("-m|--model <ID>")]
+        [Description("Model id for count_tokens, e.g. claude-sonnet-4-5.")]
         public string Model { get; set; } = Defaults.Model;
 
-        [CommandOption("--window <TOKENS>")]
-        [Description("Context window size used for the % metric.")]
+        [CommandOption("-w|--window <TOKENS>")]
+        [Description("Context window for the % metric, e.g. 200000.")]
         public int Window { get; set; } = Defaults.ContextWindowTokens;
 
-        [CommandOption("--json")]
+        [CommandOption("-j|--json")]
         [Description("Emit the report as JSON instead of a table.")]
         public bool Json { get; set; }
 
-        [CommandOption("--price <USD_PER_MTOK>")]
-        [Description("Input price per million tokens, in USD (used for the $ cost).")]
+        [CommandOption("-p|--price <USD_PER_MTOK>")]
+        [Description("Input price per million tokens in USD for the $ cost, e.g. 3.0.")]
         public double Price { get; set; } = Defaults.InputPricePerMTokUsd;
 
-        [CommandOption("--estimate")]
-        [Description("Approximate the cost offline with the o200k_base tokenizer (no API key). Counts are labelled ≈ and are not ground-truth.")]
+        [CommandOption("-e|--estimate")]
+        [Description("Approximate offline with o200k_base (no API key). Counts labelled ≈, not ground-truth.")]
         public bool Estimate { get; set; }
     }
 

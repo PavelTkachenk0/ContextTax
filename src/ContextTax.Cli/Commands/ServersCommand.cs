@@ -11,11 +11,11 @@ public sealed class ServersCommand : Command<ServersCommand.Settings>
 {
     public sealed class Settings : CommandSettings
     {
-        [CommandOption("--config <PATH>")]
+        [CommandOption("-c|--config <PATH>")]
         [Description("MCP config file to read (default: ./.mcp.json then ~/.claude.json).")]
         public string? ConfigPath { get; set; }
 
-        [CommandOption("--json")]
+        [CommandOption("-j|--json")]
         [Description("Emit JSON instead of a table.")]
         public bool Json { get; set; }
     }
