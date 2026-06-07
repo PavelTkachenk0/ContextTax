@@ -17,6 +17,7 @@ public static class InteractivePrompts
     {
         Measure,
         Session,
+        Response,
         Servers,
         Quit,
     }
@@ -28,11 +29,12 @@ public static class InteractivePrompts
             {
                 MainAction.Measure => "Measure a server / tools   (schema cost)",
                 MainAction.Session => "Analyze a recorded session (response bloat)",
+                MainAction.Response => "Measure a captured response (response bloat)",
                 MainAction.Servers => "List configured servers",
                 MainAction.Quit => "Quit",
                 _ => a.ToString(),
             })
-            .AddChoices(MainAction.Measure, MainAction.Session, MainAction.Servers, MainAction.Quit));
+            .AddChoices(MainAction.Measure, MainAction.Session, MainAction.Response, MainAction.Servers, MainAction.Quit));
 
     /// <summary>Returns the chosen source, or <c>null</c> to go back to the menu.</summary>
     public static ToolSourceOptions? ChooseToolSource(IAnsiConsole console, string? configPath)
