@@ -1,7 +1,9 @@
+using System.Globalization;
 using System.Text.Json;
 using ContextTax.Cli.Rendering;
 using ContextTax.Core.Counting;
 using ContextTax.Core.Measurement;
+using Spectre.Console.Testing;
 using Xunit;
 
 namespace ContextTax.Core.Tests;
@@ -48,5 +50,39 @@ public class SessionReportRendererTests
 
         Assert.Equal("Estimate", root.GetProperty("Mode").GetString());
         Assert.Equal(EstimateTokenCounter.LabelValue, root.GetProperty("CounterLabel").GetString());
+    }
+
+    [Fact]
+    public void RenderCard_colours_a_high_peak_window()
+    {
+        var report = Sample with { PeakPercentWindow = 42.0 };
+        var console = new TestConsole().EmitAnsiSequences();
+        SessionReportRenderer.RenderCard(report, console, "x");
+        var output = console.Output;
+
+        Assert.Contains("[", output);   // an ANSI colour sequence was emitted
+        Assert.Contains("42.0", output);
+    }
+
+    [Fact]
+    public void RenderCard_formats_numbers_invariantly_under_comma_locale()
+    {
+        var prev = CultureInfo.CurrentCulture;
+        CultureInfo.CurrentCulture = new CultureInfo("ru-RU");
+        try
+        {
+            var console = new TestConsole();
+            SessionReportRenderer.RenderCard(Sample, console, "x");
+            var output = console.Output;
+
+            Assert.Contains("1,500", output);   // thousands separator is a comma (SchemaTokens)
+            Assert.Contains("3.3", output);      // decimal point (% window / ratio)
+            Assert.DoesNotContain("3,3", output);
+            Assert.DoesNotContain("1 500", output);
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = prev;
+        }
     }
 }

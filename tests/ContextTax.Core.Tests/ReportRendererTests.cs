@@ -1,7 +1,9 @@
+using System.Globalization;
 using System.Text.Json;
 using ContextTax.Cli.Rendering;
 using ContextTax.Core.Counting;
 using ContextTax.Core.Measurement;
+using Spectre.Console.Testing;
 using Xunit;
 
 namespace ContextTax.Core.Tests;
@@ -49,5 +51,40 @@ public class ReportRendererTests
 
         Assert.Equal("Estimate", root.GetProperty("Mode").GetString());
         Assert.Equal(EstimateTokenCounter.LabelValue, root.GetProperty("CounterLabel").GetString());
+    }
+
+    [Fact]
+    public void RenderCard_shows_a_bar_for_the_top_offender()
+    {
+        var report = Sample with
+        {
+            PerTool = new[] { new ToolCost("big", 1000), new ToolCost("small", 100) },
+        };
+        var console = new TestConsole();
+        ReportRenderer.RenderCard(report, console, "x");
+
+        Assert.Contains("█", console.Output);   // a filled bar cell is rendered
+    }
+
+    [Fact]
+    public void RenderCard_formats_numbers_invariantly_under_comma_locale()
+    {
+        var prev = CultureInfo.CurrentCulture;
+        CultureInfo.CurrentCulture = new CultureInfo("ru-RU");
+        try
+        {
+            var report = Sample with { TotalSchemaTokens = 1145, ContextWindowPercent = 0.6 };
+            var console = new TestConsole();
+            ReportRenderer.RenderCard(report, console, "x");
+            var output = console.Output;
+
+            Assert.Contains("1,145", output);   // thousands separator is a comma, not a space
+            Assert.Contains("0.6", output);      // decimal point, not a comma
+            Assert.DoesNotContain("0,6", output);
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = prev;
+        }
     }
 }
