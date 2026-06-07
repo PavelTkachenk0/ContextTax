@@ -8,6 +8,7 @@ namespace ContextTax.Cli.Support;
 /// <summary>The outcome of a measurement run: either a report, or a friendly error + exit code.</summary>
 public sealed record RunResult<T>(T? Report, string? ErrorMessage, int ExitCode) where T : class
 {
+    // Success ⟺ Report is non-null — guaranteed by the Ok/Fail factories (the only intended constructors).
     public bool IsSuccess => ErrorMessage is null;
 }
 

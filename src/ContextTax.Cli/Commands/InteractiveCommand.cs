@@ -25,19 +25,30 @@ public sealed class InteractiveCommand : AsyncCommand
             AnsiConsole.MarkupLine("[grey]Measure the context-window tax of MCP servers[/]");
             AnsiConsole.WriteLine();
 
-            switch (InteractivePrompts.ChooseAction(console))
+            var action = InteractivePrompts.ChooseAction(console);
+            if (action == InteractivePrompts.MainAction.Quit)
+                return 0;
+
+            try
             {
-                case InteractivePrompts.MainAction.Measure:
-                    await RunMeasureAsync(console).ConfigureAwait(false);
-                    break;
-                case InteractivePrompts.MainAction.Session:
-                    await RunSessionAsync(console).ConfigureAwait(false);
-                    break;
-                case InteractivePrompts.MainAction.Servers:
-                    ServersRenderer.RenderTable(McpConfig.Resolver(null).List(), console);
-                    break;
-                case InteractivePrompts.MainAction.Quit:
-                    return 0;
+                switch (action)
+                {
+                    case InteractivePrompts.MainAction.Measure:
+                        await RunMeasureAsync(console).ConfigureAwait(false);
+                        break;
+                    case InteractivePrompts.MainAction.Session:
+                        await RunSessionAsync(console).ConfigureAwait(false);
+                        break;
+                    case InteractivePrompts.MainAction.Servers:
+                        ServersRenderer.RenderTable(McpConfig.Resolver(null).List(), console);
+                        break;
+                }
+            }
+#pragma warning disable CA1031 // A single failed action (e.g. a malformed MCP config) must never crash the menu loop — show it and return to the menu.
+            catch (Exception ex)
+#pragma warning restore CA1031
+            {
+                console.MarkupLine($"[red]error:[/] {Markup.Escape(ex.Message)}");
             }
 
             AnsiConsole.WriteLine();
