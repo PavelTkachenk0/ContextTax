@@ -1,0 +1,42 @@
+name: Release
+
+on:
+  push:
+    tags: [ 'v*' ]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET (latest 10.0, preview channel)
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+          dotnet-quality: 'preview'
+
+      - name: Derive version from tag
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+
+      - name: Publish all RIDs
+        run: sh scripts/publish.sh "$VERSION"
+
+      - name: Stage install scripts as assets
+        run: cp install.sh install.ps1 dist/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: |
+            dist/contexttax-osx-arm64
+            dist/contexttax-osx-x64
+            dist/contexttax-linux-x64
+            dist/contexttax-win-x64.exe
+            dist/install.sh
+            dist/install.ps1
