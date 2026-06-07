@@ -1,0 +1,16 @@
+<svg viewBox="0 0 900 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="contexttax measure --server github — schema about 8,616 tokens, 4.3 percent of a 200,000 window">
+  <rect width="900" height="360" rx="10" fill="#161B22" stroke="#30363D"/>
+  <circle cx="26" cy="26" r="6" fill="#FF5F56"/><circle cx="48" cy="26" r="6" fill="#FFBD2E"/><circle cx="70" cy="26" r="6" fill="#27C93F"/>
+  <text x="450" y="30" text-anchor="middle" font-family="'SF Mono', Menlo, monospace" font-size="13" fill="#8B949E">contexttax &#8212; zsh</text>
+  <line x1="0" y1="52" x2="900" y2="52" stroke="#30363D"/>
+  <text font-family="'SF Mono', Menlo, Consolas, monospace" font-size="15.5">
+    <tspan x="26" y="88" fill="#3FB950">$</tspan><tspan fill="#C9D1D9"> contexttax measure --server github -e</tspan>
+    <tspan x="26" y="128" fill="#8B949E">ContextTax &#183; report card &#183; github   </tspan><tspan fill="#F0883E">&#8776; ESTIMATE</tspan>
+    <tspan x="26" y="160" fill="#8B949E">Schema (43 tools loaded)  </tspan><tspan fill="#E6EDF3" font-weight="bold">~8,616 tok</tspan>
+    <tspan x="26" y="192" fill="#8B949E">Context tax               </tspan><tspan fill="#F0883E" font-weight="bold">~4.3 %</tspan><tspan fill="#8B949E"> of a 200,000 window</tspan>
+    <tspan x="26" y="232" fill="#6E7681">Top offenders</tspan>
+    <tspan x="26" y="262" fill="#8B949E">  search_commits     </tspan><tspan fill="#F0883E">████████████</tspan><tspan fill="#E6EDF3"> ~547</tspan>
+    <tspan x="26" y="290" fill="#8B949E">  pull_request_read  </tspan><tspan fill="#F0883E">███████████░</tspan><tspan fill="#E6EDF3"> ~500</tspan>
+    <tspan x="26" y="318" fill="#8B949E">  search_code        </tspan><tspan fill="#F0883E">█████████░░░</tspan><tspan fill="#E6EDF3"> ~431</tspan>
+  </text>
+</svg>
