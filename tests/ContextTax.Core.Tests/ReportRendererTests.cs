@@ -54,6 +54,19 @@ public class ReportRendererTests
     }
 
     [Fact]
+    public void RenderCard_shows_a_bar_for_the_top_offender()
+    {
+        var report = Sample with
+        {
+            PerTool = new[] { new ToolCost("big", 1000), new ToolCost("small", 100) },
+        };
+        var console = new TestConsole();
+        ReportRenderer.RenderCard(report, console, "x");
+
+        Assert.Contains("█", console.Output);   // a filled bar cell is rendered
+    }
+
+    [Fact]
     public void RenderCard_formats_numbers_invariantly_under_comma_locale()
     {
         var prev = CultureInfo.CurrentCulture;

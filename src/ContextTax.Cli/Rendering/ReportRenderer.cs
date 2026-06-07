@@ -30,7 +30,10 @@ public static class ReportRenderer
         table.AddColumn(new TableColumn("Value").RightAligned());
         table.AddRow("Schema (tools loaded)", $"{approx}{report.TotalSchemaTokens.ToString("N0", CultureInfo.InvariantCulture)} tok");
         table.AddRow("Tools", report.ToolCount.ToString(CultureInfo.InvariantCulture));
-        table.AddRow("Context tax", $"{approx}{report.ContextWindowPercent.ToString("F1", CultureInfo.InvariantCulture)} % of a {report.ContextWindowTokens.ToString("N0", CultureInfo.InvariantCulture)} window");
+        var taxColor = TaxSeverity.Color(report.ContextWindowPercent);
+        table.AddRow(
+            "Context tax",
+            $"[{taxColor}]{approx}{report.ContextWindowPercent.ToString("F1", CultureInfo.InvariantCulture)} %[/] of a {report.ContextWindowTokens.ToString("N0", CultureInfo.InvariantCulture)} window");
         table.AddRow(
             isEstimate ? "Est. API-equivalent" : "Cost to load (API)",
             $"{approx}${report.DollarCost.ToString("F2", CultureInfo.InvariantCulture)}");
@@ -41,11 +44,20 @@ public static class ReportRenderer
 
         if (report.PerTool.Count > 0)
         {
+            var max = report.PerTool.Max(t => t.Tokens);
             var offenders = new Table().Border(TableBorder.Rounded).Title("Top offenders");
             offenders.AddColumn("Tool");
+            offenders.AddColumn("");
             offenders.AddColumn(new TableColumn("Tokens").RightAligned());
             foreach (var tool in report.PerTool.Take(10))
-                offenders.AddRow(Markup.Escape(tool.Name), $"{approx}{tool.Tokens.ToString("N0", CultureInfo.InvariantCulture)}");
+            {
+                var frac = max > 0 ? (double)tool.Tokens / max : 0;
+                var barColor = frac >= 0.66 ? "red" : frac >= 0.33 ? "yellow" : "green";
+                offenders.AddRow(
+                    Markup.Escape(tool.Name),
+                    $"[{barColor}]{TokenBar.Render(tool.Tokens, max, 12)}[/]",
+                    $"{approx}{tool.Tokens.ToString("N0", CultureInfo.InvariantCulture)}");
+            }
             console.Write(offenders);
         }
 
