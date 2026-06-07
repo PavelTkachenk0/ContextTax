@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="assets/hero-dark.svg">
-    <img src="assets/hero-light.svg" alt="ContextTax — the GitHub MCP server taxes your agent ~8,616 tokens before it reads a word" width="100%">
+    <img src="assets/hero-light.svg" alt="ContextTax — the GitHub MCP server taxes your agent ~10,928 tokens before it reads a word" width="100%">
   </picture>
 </p>
 
@@ -14,7 +14,7 @@
 </p>
 
 <p align="center">
-  <picture><img src="assets/demo.svg" alt="contexttax measure --server github — ~8,616 tokens, 4.3% of a 200,000 window" width="82%"></picture>
+  <picture><img src="assets/demo.svg" alt="contexttax measure github — count_tokens 10,928 vs o200k estimate 8,616: a 2,312-token gap Claude charges that the proxy misses" width="82%"></picture>
 </p>
 
 <p align="center">
@@ -82,20 +82,21 @@ A stack of MCP servers can burn **50–200K tokens** of an agent's context windo
 
 ## The numbers, reproduced
 
-ContextTax measures itself against real MCP servers. Schema cost is **deterministic** — run the same command against the same server version and you get the same number. That's the point: reproducible, so you can cite it.
+ContextTax measures real MCP servers with **Anthropic `count_tokens`** (ground truth — Claude's own tokenizer) next to the keyless **o200k_base** estimate, so you see both *and* the gap between them.
 
-| MCP server | Tools | Schema tokens | % of a 200K window |
-|------------|------:|--------------:|-------------------:|
-| Playwright | 23 | ~3,239 | 1.6% |
-| **GitHub** (default toolset) | 43 | **~8,616** | **4.3%** |
-| GitHub (all toolsets) | 82 | ~16,327 | 8.2% |
-| Azure | 65 | ~16,364 | 8.2% |
+| MCP server | Tools | `≈` o200k estimate | `✓` count_tokens | Δ |
+|------------|------:|-------------------:|-----------------:|----:|
+| Playwright | 23 | ~3,239 | **4,633** (2.3%) | +43% |
+| **GitHub** (default toolset) | 43 | ~8,616 | **10,928 (5.5%)** | +27% |
+| GitHub (all toolsets) | 82 | ~16,327 | **20,404 (10.2%)** | +25% |
+| Azure | 65 | ~16,364 | **18,983 (9.5%)** | +16% |
 
-<sub>≈ measured with ContextTax's offline **o200k_base estimate** (not Anthropic `count_tokens`), 200K window. GitHub measured against `ghcr.io/github/github-mcp-server` (default toolset) — your numbers will match for the same server version.</sub>
+**The finding:** the keyless o200k proxy **undercounts Claude's real tokenization by 16–43%** — treat it as a conservative *floor*, not the truth. For the GitHub MCP server the real cost is **~27% higher** than the estimate. <sub>(`count_tokens` · `claude-sonnet-4-5` · 200K window; GitHub measured against `ghcr.io/github/github-mcp-server`, default toolset — deterministic, so you'll get the same numbers.)</sub>
 
-Reproduce the headline:
+Reproduce — ground truth needs a funded `ANTHROPIC_API_KEY`; add `-e` for the keyless o200k estimate:
 ```sh
-contexttax measure --server github -e --window 200000
+contexttax measure --server github --window 200000        # ✓ count_tokens
+contexttax measure --server github --window 200000 -e     # ≈ o200k estimate
 ```
 
 ## Build from source
