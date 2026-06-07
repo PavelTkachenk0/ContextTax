@@ -1,10 +1,10 @@
-<svg viewBox="0 0 1200 470" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ContextTax — the GitHub MCP server taxes your agent about 8,616 tokens before it reads a word">
+<svg viewBox="0 0 1200 470" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ContextTax — the GitHub MCP server taxes your agent about 10,928 tokens before it reads a word">
   <rect width="1200" height="470" fill="#0D1117"/>
   <text x="1185" y="430" text-anchor="end" font-family="Georgia, serif" font-size="430" fill="#E0997D" opacity="0.07" letter-spacing="-10">%</text>
   <text x="600" y="132" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="86" fill="#E6EDF3" letter-spacing="-2">Context<tspan fill="#E0997D">Tax</tspan></text>
   <rect x="564" y="160" width="72" height="3" fill="#E0997D"/>
   <text x="600" y="206" text-anchor="middle" font-family="Georgia, serif" font-size="25" font-style="italic" fill="#9DA7B3">Measure the context-window tax an MCP server charges your agent.</text>
   <text x="600" y="300" text-anchor="middle" font-family="Georgia, serif" font-size="27" fill="#E6EDF3">The GitHub MCP server taxes your agent</text>
-  <text x="600" y="362" text-anchor="middle" font-family="Georgia, serif" font-size="52" font-weight="bold" fill="#E0997D">&#8776; 8,616 tokens before it reads a word.</text>
-  <text x="600" y="412" text-anchor="middle" font-family="Georgia, serif" font-size="18" fill="#7D8590">4.3% of a 200K window &#183; 16,327 (8.2%) with all toolsets on &#183; &#8776; o200k estimate</text>
+  <text x="600" y="362" text-anchor="middle" font-family="Georgia, serif" font-size="52" font-weight="bold" fill="#E0997D">10,928 tokens before it reads a word.</text>
+  <text x="600" y="412" text-anchor="middle" font-family="Georgia, serif" font-size="18" fill="#7D8590">5.5% of a 200K window &#183; 20,404 (10.2%) all toolsets &#183; &#10003; Anthropic count_tokens</text>
 </svg>
